@@ -63,8 +63,13 @@ class DateSearchRequest(BaseModel):
 class WatchRequest(BaseModel):
     origin: str
     destination: str
-    date: str
-    return_date: str | None = None
+    # date range for depart
+    from_date: str
+    to_date: str
+    # date range for return leg (round trip)
+    return_from_date: str | None = None
+    return_to_date: str | None = None
+    duration: int | None = None          # trip length in days (round trip)
     trip_type: str = "one_way"
     seat_type: str = "economy"
     adults: int = 1
@@ -291,8 +296,11 @@ async def add_watch(req: WatchRequest):
         "id": int(datetime.now().timestamp() * 1000),
         "origin": req.origin.upper(),
         "destination": req.destination.upper(),
-        "date": req.date,
-        "return_date": req.return_date,
+        "from_date": req.from_date,
+        "to_date": req.to_date,
+        "return_from_date": req.return_from_date,
+        "return_to_date": req.return_to_date,
+        "duration": req.duration,
         "trip_type": req.trip_type,
         "seat_type": req.seat_type,
         "adults": req.adults,

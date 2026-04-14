@@ -31,14 +31,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fli.models import (
     Airport,
-    FlightSearchFilters,
+    DateSearchFilters,
     FlightSegment,
     MaxStops,
     PassengerInfo,
     SeatType,
     TripType,
 )
-from fli.search import SearchFlights
+from fli.search import SearchDates
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -54,43 +54,52 @@ def parse_stops(s: str) -> MaxStops:
 
 
 def get_cheapest_price(watch: dict) -> float | None:
-    """Return cheapest price for a watched route right now."""
+    """Return cheapest price across the watched date range."""
     try:
         origin = Airport[watch["origin"]]
         destination = Airport[watch["destination"]]
-        trip_type = TripType.ROUND_TRIP if watch["trip_type"] == "round_trip" else TripType.ONE_WAY
+        is_rt = watch["trip_type"] in ("round_trip", "two_oneway")
+        trip_type = TripType.ROUND_TRIP if is_rt else TripType.ONE_WAY
+
+        from_date = watch["from_date"]
+        to_date   = watch["to_date"]
+        duration  = watch.get("duration")
 
         segments = [FlightSegment(
             departure_airport=[[origin, 0]],
             arrival_airport=[[destination, 0]],
-            travel_date=watch["date"],
+            travel_date=from_date,
         )]
-        if trip_type == TripType.ROUND_TRIP and watch.get("return_date"):
+        if is_rt:
+            ret_from = watch.get("return_from_date") or from_date
             segments.append(FlightSegment(
                 departure_airport=[[destination, 0]],
                 arrival_airport=[[origin, 0]],
-                travel_date=watch["return_date"],
+                travel_date=ret_from,
             ))
+            if not duration:
+                # estimate from date ranges if not set
+                from datetime import datetime
+                d1 = datetime.strptime(from_date, "%Y-%m-%d")
+                d2 = datetime.strptime(ret_from, "%Y-%m-%d")
+                duration = max(1, (d2 - d1).days)
 
-        filters = FlightSearchFilters(
+        filters = DateSearchFilters(
             trip_type=trip_type,
             passenger_info=PassengerInfo(adults=watch.get("adults", 1)),
             flight_segments=segments,
             stops=parse_stops(watch.get("max_stops", "any")),
             seat_type=parse_seat(watch.get("seat_type", "economy")),
+            from_date=from_date,
+            to_date=to_date,
+            duration=duration,
         )
 
-        results = SearchFlights().search(filters, top_n=5)
+        results = SearchDates().search(filters)
         if not results:
             return None
 
-        prices = []
-        for r in results:
-            if isinstance(r, tuple):
-                prices.append(r[0].price + r[1].price)
-            else:
-                prices.append(r.price)
-        return min(prices) if prices else None
+        return min(r.price for r in results)
 
     except Exception as e:
         print(f"  Error fetching price: {e}")
@@ -111,9 +120,9 @@ def send_notification(watch: dict, current_price: float):
 
     title = f"✈ Price alert: {label}"
     body = (
-        f"${current_price:.0f} on {date_str} — "
+        f"${current_price:.0f} found in {watch['from_date']} – {watch['to_date']} — "
         f"${savings:.0f} below your ${target:.0f} target!\n"
-        f"Book now on Google Flights."
+        f"Open Google Flights to book."
     )
 
     try:
