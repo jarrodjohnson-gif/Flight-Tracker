@@ -35,8 +35,8 @@ class Client:
             self._client.close()
 
     @sleep_and_retry
-    @limits(calls=10, period=1)
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(), reraise=True)
+    @limits(calls=3, period=1)
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=3, max=30), reraise=True)
     def get(self, url: str, **kwargs: Any) -> requests.Response:
         """Make a rate-limited GET request with automatic retries.
 
@@ -59,8 +59,8 @@ class Client:
             raise Exception(f"GET request failed: {str(e)}") from e
 
     @sleep_and_retry
-    @limits(calls=10, period=1)
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(), reraise=True)
+    @limits(calls=3, period=1)
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=2, min=3, max=30), reraise=True)
     def post(self, url: str, **kwargs: Any) -> requests.Response:
         """Make a rate-limited POST request with automatic retries.
 

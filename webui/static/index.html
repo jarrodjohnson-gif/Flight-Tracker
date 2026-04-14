@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fli — Flight Search</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system','BlinkMacSystemFont','SF Pro Display','SF Pro Text','Helvetica Neue','Arial','sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #000; color: #fff; }
+    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.4; }
+    input, select { color-scheme: dark; }
+    .pill-active  { background:#fff; color:#000; }
+    .pill-inactive{ background:transparent; color:#636366; border:1px solid #3a3a3c; }
+    .pill-inactive:hover { border-color:#636366; color:#fff; }
+    .tab-active   { border-bottom:2px solid #fff; color:#fff; }
+    .tab-inactive { border-bottom:2px solid transparent; color:#636366; }
+    .field-input  {
+      width:100%; background:#1c1c1e; border:1px solid #3a3a3c;
+      border-radius:10px; padding:12px 14px; font-size:15px; color:#fff;
+      outline:none; transition:border-color 0.15s;
+    }
+    .field-input:focus { border-color:#636366; }
+    .field-input::placeholder { color:#48484a; }
+    .field-label  { font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#636366; margin-bottom:6px; display:block; }
+    select option { background:#1c1c1e; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spin { animation:spin 0.7s linear infinite; }
+
+    .flip-card { background:#111; border:1px solid #2c2c2e; border-radius:16px; overflow:hidden; transition:border-color 0.15s; }
+    .flip-card:hover { border-color:#48484a; }
+    .flip-card.best { border-color:#fff; }
+
+    .price-big { font-size:2rem; font-weight:700; letter-spacing:-1px; line-height:1; }
+    .price-sub  { font-size:11px; color:#636366; margin-top:2px; }
+
+    .tag { display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; letter-spacing:0.03em; }
+    .tag-nonstop{ background:#1c1c1e; color:#fff;    border:1px solid #3a3a3c; }
+    .tag-stop   { background:#1c1c1e; color:#aeaeb2; border:1px solid #3a3a3c; }
+    .tag-best   { background:#fff;    color:#000; }
+    .tag-2ow    { background:#1c1c1e; color:#aeaeb2; border:1px solid #3a3a3c; font-size:10px; }
+    .tag-bags   { background:#1c1c1e; color:#aeaeb2; border:1px solid #3a3a3c; font-size:10px; }
+
+    .leg-row    { display:flex; align-items:center; }
+    .leg-time   { font-size:22px; font-weight:700; letter-spacing:-0.5px; line-height:1; }
+    .leg-code   { font-size:12px; color:#636366; margin-top:2px; }
+    .leg-date   { font-size:11px; color:#48484a; }
+    .leg-line-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; padding:0 12px; }
+    .leg-duration  { font-size:11px; color:#636366; }
+    .leg-line   { width:100%; height:1px; background:#2c2c2e; position:relative; }
+    .leg-line::before { content:"✈"; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:11px; background:#111; padding:0 4px; color:#48484a; }
+
+    .rt-label   { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#48484a; text-align:center; margin:10px 0; }
+
+    .date-chip  { background:#111; border:1px solid #2c2c2e; border-radius:12px; padding:14px 10px; text-align:center; transition:border-color 0.15s; }
+    .date-chip:hover { border-color:#48484a; }
+    .date-chip.best { border-color:#fff; }
+    .date-chip .dc-date  { font-size:13px; font-weight:600; }
+    .date-chip .dc-ret   { font-size:10px; color:#636366; margin-top:2px; }
+    .date-chip .dc-price { font-size:17px; font-weight:700; margin-top:8px; }
+    .date-chip.best .dc-price  { color:#fff; }
+    .date-chip:not(.best) .dc-price { color:#aeaeb2; }
+
+    /* Watch modal */
+    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:50; }
+    .modal    { background:#111; border:1px solid #3a3a3c; border-radius:20px; padding:28px; width:340px; }
+
+    /* Watch panel */
+    .watch-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #1c1c1e; }
+    .watch-row:last-child { border-bottom:none; }
+
+    /* Toggle switch */
+    .toggle-wrap { display:flex; align-items:center; gap:8px; cursor:pointer; }
+    .toggle      { width:36px; height:20px; background:#3a3a3c; border-radius:10px; position:relative; transition:background 0.2s; flex-shrink:0; }
+    .toggle.on   { background:#fff; }
+    .toggle::after { content:""; position:absolute; width:16px; height:16px; background:#000; border-radius:8px; top:2px; left:2px; transition:transform 0.2s; }
+    .toggle.on::after { transform:translateX(16px); }
+  </style>
+</head>
+<body class="font-sans min-h-screen px-4 pb-24">
+
+  <!-- Header -->
+  <header class="max-w-2xl mx-auto pt-12 pb-8 flex items-center justify-between">
+    <div>
+      <h1 class="text-4xl font-bold tracking-tight">✦ fli</h1>
+      <p class="text-xs mt-1" style="color:#636366">Google Flights, direct</p>
+    </div>
+    <button onclick="toggleWatchPanel()" class="text-xs px-4 py-2 rounded-full border transition-all" style="border-color:#3a3a3c;color:#aeaeb2" id="watch-btn">
+      Watching <span id="watch-count">0</span>
+    </button>
+  </header>
+
+  <!-- Search panel -->
+  <div class="max-w-2xl mx-auto rounded-2xl p-6 border mb-6" style="background:#111;border-color:#2c2c2e">
+
+    <div class="flex gap-6 mb-6" style="border-bottom:1px solid #2c2c2e">
+      <button id="tab-btn-flights" class="tab-active pb-3 text-sm font-semibold transition-all" onclick="switchTab('flights')">Search Flights</button>
+      <button id="tab-btn-dates"   class="tab-inactive pb-3 text-sm font-semibold transition-all" onclick="switchTab('dates')">Cheapest Dates</button>
+    </div>
+
+    <!-- FLIGHTS TAB -->
+    <div id="tab-flights">
+      <div class="flex flex-wrap gap-2 mb-5" id="trip-pills">
+        <button class="pill-active pill px-4 py-1.5 rounded-full text-sm font-medium transition-all"  onclick="setTripType('one_way',this)">One Way</button>
+        <button class="pill-inactive pill px-4 py-1.5 rounded-full text-sm font-medium transition-all" onclick="setTripType('round_trip',this)">Round Trip</button>
+        <button class="pill-inactive pill px-4 py-1.5 rounded-full text-sm font-medium transition-all" onclick="setTripType('two_oneway',this)" title="Search legs separately — often cheaper">2x One-Way ✦</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div><label class="field-label">From</label><input id="f-origin" class="field-input uppercase" type="text" placeholder="JFK" maxlength="3"/></div>
+        <div><label class="field-label">To</label><input id="f-destination" class="field-input uppercase" type="text" placeholder="LAX" maxlength="3"/></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div><label class="field-label">Depart</label><input id="f-date" class="field-input" type="date"/></div>
+        <div id="f-return-wrap" style="visibility:hidden"><label class="field-label">Return</label><input id="f-return-date" class="field-input" type="date"/></div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 mb-3">
+        <div><label class="field-label">Cabin</label>
+          <select id="f-seat" class="field-input">
+            <option value="economy">Economy</option>
+            <option value="premium_economy">Prem. Economy</option>
+            <option value="business">Business</option>
+            <option value="first">First</option>
+          </select>
+        </div>
+        <div><label class="field-label">Adults</label><input id="f-adults" class="field-input" type="number" value="1" min="1" max="9"/></div>
+        <div><label class="field-label">Stops</label>
+          <select id="f-stops" class="field-input">
+            <option value="any">Any</option>
+            <option value="nonstop">Nonstop</option>
+            <option value="one">≤ 1 stop</option>
+            <option value="two">≤ 2 stops</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Bags row -->
+      <div class="flex items-center gap-6 mb-4 px-1">
+        <div class="flex items-center gap-3">
+          <label class="field-label mb-0">Checked bags</label>
+          <select id="f-checked-bags" class="field-input" style="width:80px;padding:8px 10px;font-size:13px">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        </div>
+        <label class="toggle-wrap" onclick="toggleCarryOn('f-carry-on')">
+          <div class="toggle" id="f-carry-on"></div>
+          <span class="text-xs" style="color:#aeaeb2">Carry-on</span>
+        </label>
+        <span class="text-xs" style="color:#48484a">Prices include bag fees</span>
+      </div>
+
+      <button onclick="searchFlights()" class="w-full bg-white text-black font-semibold py-3 rounded-xl text-sm hover:bg-gray-100 transition-all">Search Flights</button>
+    </div>
+
+    <!-- DATES TAB -->
+    <div id="tab-dates" class="hidden">
+      <div class="flex gap-2 mb-5">
+        <button class="pill-active pill px-4 py-1.5 rounded-full text-sm font-medium transition-all"  onclick="setDateTripType('one_way',this)">One Way</button>
+        <button class="pill-inactive pill px-4 py-1.5 rounded-full text-sm font-medium transition-all" onclick="setDateTripType('round_trip',this)">Round Trip</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div><label class="field-label">From</label><input id="d-origin" class="field-input uppercase" type="text" placeholder="JFK" maxlength="3"/></div>
+        <div><label class="field-label">To</label><input id="d-destination" class="field-input uppercase" type="text" placeholder="LAX" maxlength="3"/></div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div><label class="field-label">Range Start</label><input id="d-from" class="field-input" type="date"/></div>
+        <div><label class="field-label">Range End</label><input id="d-to" class="field-input" type="date"/></div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 mb-3">
+        <div><label class="field-label">Cabin</label>
+          <select id="d-seat" class="field-input">
+            <option value="economy">Economy</option>
+            <option value="premium_economy">Prem. Economy</option>
+            <option value="business">Business</option>
+            <option value="first">First</option>
+          </select>
+        </div>
+        <div><label class="field-label">Adults</label><input id="d-adults" class="field-input" type="number" value="1" min="1" max="9"/></div>
+        <div id="d-duration-wrap" class="hidden">
+          <label class="field-label">Stay (days)</label>
+          <input id="d-duration" class="field-input" type="number" placeholder="e.g. 7" min="1" max="30"/>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-6 mb-4 px-1">
+        <div class="flex items-center gap-3">
+          <label class="field-label mb-0">Checked bags</label>
+          <select id="d-checked-bags" class="field-input" style="width:80px;padding:8px 10px;font-size:13px">
+            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+          </select>
+        </div>
+        <label class="toggle-wrap" onclick="toggleCarryOn('d-carry-on')">
+          <div class="toggle" id="d-carry-on"></div>
+          <span class="text-xs" style="color:#aeaeb2">Carry-on</span>
+        </label>
+      </div>
+
+      <button onclick="searchDates()" class="w-full bg-white text-black font-semibold py-3 rounded-xl text-sm hover:bg-gray-100 transition-all">Find Cheapest Dates</button>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="results" class="max-w-2xl mx-auto"></div>
+
+  <!-- Watch panel (slide-in from right, actually just shown below header) -->
+  <div id="watch-panel" class="hidden max-w-2xl mx-auto rounded-2xl p-6 border mb-6" style="background:#111;border-color:#2c2c2e">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold text-sm">Price Watches</h2>
+      <span class="text-xs" style="color:#636366">ntfy.sh alerts your phone when price hits target</span>
+    </div>
+    <div id="watch-list"><div class="text-xs py-4 text-center" style="color:#48484a">No watches yet — search a flight and hit Watch.</div></div>
+  </div>
+
+  <!-- Watch modal -->
+  <div id="watch-modal" class="modal-bg hidden">
+    <div class="modal">
+      <h3 class="font-semibold mb-1" id="modal-title">Watch this route</h3>
+      <p class="text-xs mb-5" style="color:#636366">Get a push notification when price drops to your target</p>
+      <label class="field-label">Target price ($)</label>
+      <input id="modal-price" class="field-input mb-4" type="number" placeholder="e.g. 199" min="1"/>
+      <label class="field-label">Label (optional)</label>
+      <input id="modal-label" class="field-input mb-6" type="text" placeholder="e.g. Summer trip"/>
+      <div class="flex gap-3">
+        <button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl text-sm font-medium" style="background:#1c1c1e;color:#aeaeb2">Cancel</button>
+        <button onclick="confirmWatch()" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-white text-black">Watch</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+let flightsTripType = 'one_way';
+let datesTripType = 'one_way';
+let pendingWatch = null; // flight data pending modal confirmation
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+(function() {
+  const pad = n => String(n).padStart(2,'0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const add = (d,n) => { const x=new Date(d); x.setDate(d.getDate()+n); return x; };
+  const t = new Date();
+  document.getElementById('f-date').value = fmt(add(t,14));
+  document.getElementById('f-return-date').value = fmt(add(t,21));
+  document.getElementById('d-from').value = fmt(add(t,14));
+  document.getElementById('d-to').value = fmt(add(t,56));
+  loadWatches();
+})();
+
+// ── Tabs / pills ──────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  const isF = tab==='flights';
+  document.getElementById('tab-flights').classList.toggle('hidden',!isF);
+  document.getElementById('tab-dates').classList.toggle('hidden',isF);
+  document.getElementById('tab-btn-flights').className = isF ? 'tab-active pb-3 text-sm font-semibold transition-all' : 'tab-inactive pb-3 text-sm font-semibold transition-all';
+  document.getElementById('tab-btn-dates').className   = !isF ? 'tab-active pb-3 text-sm font-semibold transition-all' : 'tab-inactive pb-3 text-sm font-semibold transition-all';
+  document.getElementById('results').innerHTML='';
+}
+
+function setTripType(type,el) {
+  flightsTripType=type;
+  document.querySelectorAll('#trip-pills .pill').forEach(p=>p.className=p.className.replace('pill-active','pill-inactive'));
+  el.className=el.className.replace('pill-inactive','pill-active');
+  const showReturn = type==='round_trip'||type==='two_oneway';
+  document.getElementById('f-return-wrap').style.visibility = showReturn?'visible':'hidden';
+}
+
+function setDateTripType(type,el) {
+  datesTripType=type;
+  el.closest('.flex').querySelectorAll('.pill').forEach(p=>p.className=p.className.replace('pill-active','pill-inactive'));
+  el.className=el.className.replace('pill-inactive','pill-active');
+  document.getElementById('d-duration-wrap').classList.toggle('hidden',type!=='round_trip');
+}
+
+function toggleCarryOn(id) {
+  const el=document.getElementById(id);
+  el.classList.toggle('on');
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+function fmtDur(m) { if(!m)return'—'; const h=Math.floor(m/60),mn=m%60; return mn?`${h}h ${mn}m`:`${h}h`; }
+
+function stopsTag(s) {
+  if(s===0) return `<span class="tag tag-nonstop">Nonstop</span>`;
+  if(s===1) return `<span class="tag tag-stop">1 stop</span>`;
+  return `<span class="tag tag-stop">${s} stops</span>`;
+}
+
+function renderLeg(f) {
+  const first=f.legs[0], last=f.legs[f.legs.length-1];
+  const airlines=[...new Set(f.legs.map(l=>l.airline))].join(', ');
+  return `
+    <div class="leg-row">
+      <div class="text-center" style="min-width:58px">
+        <div class="leg-time">${first.departure_time||'—'}</div>
+        <div class="leg-code">${first.departure_airport}</div>
+        <div class="leg-date">${first.departure_date||''}</div>
+      </div>
+      <div class="leg-line-wrap">
+        <div class="leg-duration">${fmtDur(f.duration)}</div>
+        <div class="leg-line" style="width:100%"></div>
+        ${stopsTag(f.stops)}
+      </div>
+      <div class="text-center" style="min-width:58px">
+        <div class="leg-time">${last.arrival_time||'—'}</div>
+        <div class="leg-code">${last.arrival_airport}</div>
+        <div class="leg-date">${last.arrival_date||''}</div>
+      </div>
+    </div>
+    <div class="mt-2 text-xs" style="color:#636366">${airlines}</div>`;
+}
+
+function hasBags() {
+  const bags = parseInt(document.getElementById('f-checked-bags')?.value||0);
+  const co = document.getElementById('f-carry-on')?.classList.contains('on');
+  return bags>0||co;
+}
+
+function watchBtn(flightData) {
+  const d = JSON.stringify(flightData).replace(/"/g,'&quot;');
+  return `<button onclick='openWatch(${d})' class="text-xs px-3 py-1.5 rounded-full border transition-all mt-3" style="border-color:#3a3a3c;color:#636366;hover:color:#fff">＋ Watch price</button>`;
+}
+
+function renderFlights(flights, searchCtx) {
+  if(!flights.length) return `<div class="text-center py-12" style="color:#636366">No flights found.</div>`;
+  const getPrice = f=>(f.type==='round_trip'||f.type==='two_oneway')?f.total_price:f.price;
+  const minPrice = Math.min(...flights.map(getPrice));
+
+  return flights.map(f=>{
+    const price=getPrice(f);
+    const isBest=price===minPrice;
+    const isRT=f.type==='round_trip'||f.type==='two_oneway';
+    const bagsNote = hasBags() ? `<span class="tag tag-bags ml-1">incl. bags</span>` : '';
+
+    return `
+      <div class="flip-card mb-3 ${isBest?'best':''}">
+        <div class="p-5">
+          <div class="flex flex-wrap gap-2 mb-3">
+            ${isBest?`<span class="tag tag-best">Best price</span>`:''}
+            ${f.type==='two_oneway'?`<span class="tag tag-2ow">SEPARATE TICKETS</span>`:''}
+            ${bagsNote}
+          </div>
+          ${isRT ? `
+            ${renderLeg(f.outbound)}
+            <div class="rt-label">↩ Return</div>
+            ${renderLeg(f.return)}
+            <div class="mt-4 pt-4 flex items-end justify-between" style="border-top:1px solid #1c1c1e">
+              <div>
+                <div class="text-xs" style="color:#636366">${f.type==='two_oneway'?'Combined · 2 bookings':'Round trip'}</div>
+                ${watchBtn({...searchCtx, target_price_hint: price})}
+              </div>
+              <div class="text-right">
+                <div class="price-big">$${price.toFixed(0)}</div>
+                <div class="price-sub">${f.currency}</div>
+              </div>
+            </div>
+          ` : `
+            <div class="flex items-start justify-between gap-4">
+              <div class="flex-1">
+                ${renderLeg(f)}
+                ${watchBtn({...searchCtx, target_price_hint: price})}
+              </div>
+              <div class="text-right shrink-0 pl-2">
+                <div class="price-big">$${price.toFixed(0)}</div>
+                <div class="price-sub">${f.currency||'USD'}</div>
+              </div>
+            </div>
+          `}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderDates(dates) {
+  if(!dates.length) return `<div class="text-center py-12" style="color:#636366">No dates found.</div>`;
+  return `<div class="grid grid-cols-3 gap-2 sm:grid-cols-4">`+
+    dates.map((d,i)=>{
+      const label=new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',weekday:'short'});
+      const ret=d.return_date?new Date(d.return_date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):null;
+      return `<div class="date-chip ${i===0?'best':''}">
+        <div class="dc-date">${label}</div>
+        ${ret?`<div class="dc-ret">→ ${ret}</div>`:''}
+        <div class="dc-price">$${d.price.toFixed(0)}</div>
+      </div>`;
+    }).join('')+`</div>`;
+}
+
+function spinner(msg) {
+  return `<div class="text-center py-16">
+    <div class="w-7 h-7 border-2 spin mx-auto mb-4 rounded-full" style="border-color:#2c2c2e;border-top-color:#fff"></div>
+    <div class="text-sm" style="color:#636366">${msg}</div>
+  </div>`;
+}
+function errBox(msg) {
+  return `<div class="rounded-xl p-4 text-sm border" style="border-color:#2c2c2e;color:#aeaeb2">${msg}</div>`;
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+async function searchFlights() {
+  const origin = document.getElementById('f-origin').value.trim().toUpperCase();
+  const destination = document.getElementById('f-destination').value.trim().toUpperCase();
+  const date = document.getElementById('f-date').value;
+  const returnDate = document.getElementById('f-return-date').value;
+  if(!origin||!destination||!date){alert('Fill in origin, destination, and date.');return;}
+
+  const checkedBags = parseInt(document.getElementById('f-checked-bags').value||0);
+  const carryOn = document.getElementById('f-carry-on').classList.contains('on');
+
+  const payload = {
+    origin, destination, date,
+    trip_type: flightsTripType,
+    seat_type: document.getElementById('f-seat').value,
+    adults: parseInt(document.getElementById('f-adults').value),
+    max_stops: document.getElementById('f-stops').value,
+    checked_bags: checkedBags,
+    carry_on: carryOn,
+    top_n: 10,
+  };
+  if((flightsTripType==='round_trip'||flightsTripType==='two_oneway')&&returnDate) payload.return_date=returnDate;
+
+  // context for watch button
+  const searchCtx = {
+    origin, destination, date,
+    return_date: payload.return_date||null,
+    trip_type: flightsTripType,
+    seat_type: payload.seat_type,
+    adults: payload.adults,
+    max_stops: payload.max_stops,
+  };
+
+  document.getElementById('results').innerHTML=spinner('Searching flights…');
+  try {
+    const res=await fetch('/api/search/flights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if(data.error){document.getElementById('results').innerHTML=errBox(data.error);return;}
+    document.getElementById('results').innerHTML=`
+      <div class="flex items-center justify-between mb-4">
+        <div class="font-semibold text-base">${origin} → ${destination}</div>
+        <div class="text-xs" style="color:#636366">${data.flights.length} result${data.flights.length!==1?'s':''}</div>
+      </div>
+      ${renderFlights(data.flights, searchCtx)}`;
+  } catch(e){document.getElementById('results').innerHTML=errBox(e.message);}
+}
+
+async function searchDates() {
+  const origin=document.getElementById('d-origin').value.trim().toUpperCase();
+  const destination=document.getElementById('d-destination').value.trim().toUpperCase();
+  const fromDate=document.getElementById('d-from').value;
+  const toDate=document.getElementById('d-to').value;
+  if(!origin||!destination||!fromDate||!toDate){alert('Fill in all fields.');return;}
+
+  const payload={
+    origin,destination,from_date:fromDate,to_date:toDate,
+    trip_type:datesTripType,
+    seat_type:document.getElementById('d-seat').value,
+    adults:parseInt(document.getElementById('d-adults').value),
+    duration:datesTripType==='round_trip'?(parseInt(document.getElementById('d-duration').value)||null):null,
+    checked_bags:parseInt(document.getElementById('d-checked-bags').value||0),
+    carry_on:document.getElementById('d-carry-on').classList.contains('on'),
+  };
+
+  document.getElementById('results').innerHTML=spinner('Scanning dates…');
+  try {
+    const res=await fetch('/api/search/dates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if(data.error){document.getElementById('results').innerHTML=errBox(data.error);return;}
+    document.getElementById('results').innerHTML=`
+      <div class="flex items-center justify-between mb-4">
+        <div class="font-semibold text-base">${origin} → ${destination} · Cheapest dates</div>
+        <div class="text-xs" style="color:#636366">${data.dates.length} dates</div>
+      </div>
+      ${renderDates(data.dates)}`;
+  } catch(e){document.getElementById('results').innerHTML=errBox(e.message);}
+}
+
+// ── Watch modal ───────────────────────────────────────────────────────────────
+function openWatch(ctx) {
+  pendingWatch = ctx;
+  document.getElementById('modal-title').textContent=`Watch ${ctx.origin} → ${ctx.destination}`;
+  document.getElementById('modal-price').value = ctx.target_price_hint ? Math.floor(ctx.target_price_hint * 0.9) : '';
+  document.getElementById('modal-label').value = `${ctx.origin} → ${ctx.destination} · ${ctx.date}`;
+  document.getElementById('watch-modal').classList.remove('hidden');
+}
+function closeModal() {
+  document.getElementById('watch-modal').classList.add('hidden');
+  pendingWatch=null;
+}
+async function confirmWatch() {
+  const price=parseFloat(document.getElementById('modal-price').value);
+  const label=document.getElementById('modal-label').value.trim();
+  if(!price||price<=0){alert('Enter a target price.');return;}
+  const payload={...pendingWatch, target_price:price, label};
+  delete payload.target_price_hint;
+  try {
+    const res=await fetch('/api/watch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if(data.error){alert(data.error);return;}
+    closeModal();
+    loadWatches();
+    // briefly show the watch panel
+    document.getElementById('watch-panel').classList.remove('hidden');
+  } catch(e){alert(e.message);}
+}
+
+// ── Watch panel ───────────────────────────────────────────────────────────────
+function toggleWatchPanel() {
+  document.getElementById('watch-panel').classList.toggle('hidden');
+}
+
+async function loadWatches() {
+  try {
+    const res=await fetch('/api/watches');
+    const data=await res.json();
+    const watches=data.watches||[];
+    document.getElementById('watch-count').textContent=watches.length;
+    renderWatches(watches);
+  } catch(_){}
+}
+
+function renderWatches(watches) {
+  const el=document.getElementById('watch-list');
+  if(!watches.length){
+    el.innerHTML=`<div class="text-xs py-4 text-center" style="color:#48484a">No watches yet.</div>`;
+    return;
+  }
+  el.innerHTML=watches.map(w=>`
+    <div class="watch-row">
+      <div>
+        <div class="text-sm font-medium">${w.label}</div>
+        <div class="text-xs mt-0.5" style="color:#636366">${w.date}${w.return_date?' → '+w.return_date:''} · target $${w.target_price}</div>
+        ${w.last_price!=null?`<div class="text-xs mt-0.5" style="color:#48484a">Last seen $${w.last_price.toFixed(0)} ${w.triggered?'· <span style="color:#fff">ALERTED</span>':''}</div>`:''}
+      </div>
+      <button onclick="deleteWatch(${w.id})" class="text-xs px-3 py-1 rounded-full" style="background:#1c1c1e;color:#636366">Remove</button>
+    </div>`).join('');
+}
+
+async function deleteWatch(id) {
+  await fetch(`/api/watch/${id}`,{method:'DELETE'});
+  loadWatches();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeModal();
+  if(e.key!=='Enter') return;
+  if(!document.getElementById('tab-flights').classList.contains('hidden')) searchFlights();
+  else searchDates();
+});
+document.getElementById('watch-modal').addEventListener('click',e=>{
+  if(e.target===document.getElementById('watch-modal')) closeModal();
+});
+</script>
+</body>
+</html>
