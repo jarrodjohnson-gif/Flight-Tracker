@@ -10,558 +10,1069 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['-apple-system','BlinkMacSystemFont','SF Pro Display','SF Pro Text','Helvetica Neue','Arial','sans-serif'],
+            sans: ['"Google Sans"','Roboto','Arial','sans-serif'],
           },
+          colors: {
+            blue: { DEFAULT: '#1a73e8', hover: '#1557b0', light: '#e8f0fe' },
+          }
         }
       }
     }
   </script>
   <style>
-    body { background: #000; color: #fff; }
-    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.4; }
-    input, select { color-scheme: dark; }
-    .pill-active  { background:#fff; color:#000; }
-    .pill-inactive{ background:transparent; color:#636366; border:1px solid #3a3a3c; }
-    .pill-inactive:hover { border-color:#636366; color:#fff; }
-    .tab-active   { border-bottom:2px solid #fff; color:#fff; }
-    .tab-inactive { border-bottom:2px solid transparent; color:#636366; }
-    .field-input  {
-      width:100%; background:#1c1c1e; border:1px solid #3a3a3c;
-      border-radius:10px; padding:12px 14px; font-size:15px; color:#fff;
-      outline:none; transition:border-color 0.15s;
+    /* ── Base ─────────────────────────────────────────── */
+    body { background:#f8f9fa; color:#202124; }
+
+    /* ── Hero ─────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(180deg,#c9d9f5 0%,#dce8f8 40%,#f8f9fa 100%);
+      position:relative; overflow:hidden;
     }
-    .field-input:focus { border-color:#636366; }
-    .field-input::placeholder { color:#48484a; }
-    .field-label  { font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:#636366; margin-bottom:6px; display:block; }
-    select option { background:#1c1c1e; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .spin { animation:spin 0.7s linear infinite; }
+    .hero-mountains {
+      position:absolute; bottom:0; left:0; right:0; height:140px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 140'%3E%3Cpath fill='%23c5d8f0' d='M0,100 L120,50 L240,90 L360,30 L480,70 L600,20 L720,60 L840,10 L960,55 L1080,25 L1200,65 L1320,40 L1440,80 L1440,140 L0,140Z'/%3E%3Cpath fill='%23d8e8f6' d='M0,120 L180,80 L360,110 L540,60 L720,100 L900,70 L1080,105 L1260,75 L1440,110 L1440,140 L0,140Z'/%3E%3Cpath fill='%23f8f9fa' d='M0,135 L240,115 L480,130 L720,118 L960,132 L1200,120 L1440,135 L1440,140 L0,140Z'/%3E%3C/svg%3E") center bottom / cover no-repeat;
+    }
 
-    .flip-card { background:#111; border:1px solid #2c2c2e; border-radius:16px; overflow:hidden; transition:border-color 0.15s; }
-    .flip-card:hover { border-color:#48484a; }
-    .flip-card.best { border-color:#fff; }
+    /* ── Search card ──────────────────────────────────── */
+    .search-card {
+      background:#fff;
+      border-radius:12px;
+      box-shadow:0 1px 3px rgba(0,0,0,.1),0 4px 16px rgba(0,0,0,.08);
+    }
 
-    .price-big { font-size:2rem; font-weight:700; letter-spacing:-1px; line-height:1; }
-    .price-sub  { font-size:11px; color:#636366; margin-top:2px; }
+    /* ── Pill controls ────────────────────────────────── */
+    .ctrl-pill {
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:14px; color:#202124;
+      background:#fff; border:1px solid #dadce0;
+      border-radius:24px; padding:6px 14px;
+      cursor:pointer; transition:background .15s, box-shadow .15s;
+    }
+    .ctrl-pill:hover { background:#f8f9fa; box-shadow:0 1px 3px rgba(0,0,0,.15); }
+    .ctrl-pill svg { color:#70757a; }
 
-    .tag { display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; letter-spacing:0.03em; }
-    .tag-nonstop{ background:#1c1c1e; color:#fff;    border:1px solid #3a3a3c; }
-    .tag-stop   { background:#1c1c1e; color:#aeaeb2; border:1px solid #3a3a3c; }
-    .tag-best   { background:#fff;    color:#000; }
-    .tag-2ow    { background:#1c1c1e; color:#aeaeb2; border:1px solid #3a3a3c; font-size:10px; }
-    .tag-bags   { background:#1c1c1e; color:#aeaeb2; border:1px solid #3a3a3c; font-size:10px; }
+    /* ── Airport / date inputs ────────────────────────── */
+    .route-input-wrap {
+      display:flex; align-items:center;
+      border:1px solid #dadce0; border-radius:8px;
+      background:#fff; transition:border-color .15s, box-shadow .15s;
+      height:56px; padding:0 16px; gap:10px;
+    }
+    .route-input-wrap:focus-within {
+      border-color:#1a73e8;
+      box-shadow:0 0 0 2px rgba(26,115,232,.2);
+    }
+    .route-input-wrap svg { color:#70757a; flex-shrink:0; }
+    .route-input {
+      border:none; outline:none; flex:1;
+      font-size:16px; color:#202124; background:transparent;
+      font-family:inherit;
+    }
+    .route-input::placeholder { color:#9aa0a6; font-size:15px; }
+    .route-input-label {
+      font-size:12px; color:#70757a; pointer-events:none;
+      position:absolute; top:8px; left:44px;
+    }
+    .route-input-wrap.has-value .route-input { padding-top:16px; }
 
-    .leg-row    { display:flex; align-items:center; }
-    .leg-time   { font-size:22px; font-weight:700; letter-spacing:-0.5px; line-height:1; }
-    .leg-code   { font-size:12px; color:#636366; margin-top:2px; }
-    .leg-date   { font-size:11px; color:#48484a; }
-    .leg-line-wrap { flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; padding:0 12px; }
-    .leg-duration  { font-size:11px; color:#636366; }
-    .leg-line   { width:100%; height:1px; background:#2c2c2e; position:relative; }
-    .leg-line::before { content:"✈"; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:11px; background:#111; padding:0 4px; color:#48484a; }
+    /* swap button */
+    .swap-btn {
+      width:40px; height:40px; border-radius:50%;
+      border:1px solid #dadce0; background:#fff;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; flex-shrink:0; transition:background .15s;
+    }
+    .swap-btn:hover { background:#f8f9fa; }
 
-    .rt-label   { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#48484a; text-align:center; margin:10px 0; }
+    /* ── Date input trigger ───────────────────────────── */
+    .date-trigger {
+      display:flex; align-items:center; gap:10px;
+      border:1px solid #dadce0; border-radius:8px;
+      background:#fff; height:56px; padding:0 16px;
+      cursor:pointer; transition:border-color .15s, box-shadow .15s;
+      user-select:none;
+    }
+    .date-trigger:hover, .date-trigger.open {
+      border-color:#1a73e8;
+      box-shadow:0 0 0 2px rgba(26,115,232,.2);
+    }
+    .date-trigger-label { font-size:12px; color:#70757a; }
+    .date-trigger-value { font-size:16px; color:#202124; margin-top:1px; }
 
-    .date-chip  { background:#111; border:1px solid #2c2c2e; border-radius:12px; padding:14px 10px; text-align:center; transition:border-color 0.15s; }
-    .date-chip:hover { border-color:#48484a; }
-    .date-chip.best { border-color:#fff; }
-    .date-chip .dc-date  { font-size:13px; font-weight:600; }
-    .date-chip .dc-ret   { font-size:10px; color:#636366; margin-top:2px; }
-    .date-chip .dc-price { font-size:17px; font-weight:700; margin-top:8px; }
-    .date-chip.best .dc-price  { color:#fff; }
-    .date-chip:not(.best) .dc-price { color:#aeaeb2; }
+    /* ── Search button ────────────────────────────────── */
+    .search-btn {
+      background:#1a73e8; color:#fff;
+      border-radius:24px; padding:0 32px; height:48px;
+      font-size:15px; font-weight:500;
+      border:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+      transition:background .15s, box-shadow .15s;
+      white-space:nowrap;
+    }
+    .search-btn:hover { background:#1557b0; box-shadow:0 1px 3px rgba(0,0,0,.2); }
 
-    /* Watch modal */
-    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:50; }
-    .modal    { background:#111; border:1px solid #3a3a3c; border-radius:20px; padding:28px; width:340px; }
+    /* ── Tab strip ────────────────────────────────────── */
+    .tab-btn {
+      font-size:14px; font-weight:500; padding:10px 16px;
+      border-bottom:3px solid transparent; color:#70757a;
+      cursor:pointer; transition:color .15s, border-color .15s;
+    }
+    .tab-btn.active { color:#1a73e8; border-color:#1a73e8; }
+    .tab-btn:hover:not(.active) { color:#202124; background:#f8f9fa; }
 
-    /* Watch panel */
-    .watch-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #1c1c1e; }
+    /* ── Calendar picker ──────────────────────────────── */
+    .cal-popup {
+      position:absolute; z-index:100; top:calc(100% + 8px); left:50%;
+      transform:translateX(-50%);
+      background:#fff; border-radius:12px;
+      box-shadow:0 4px 24px rgba(0,0,0,.15);
+      padding:20px 24px 16px;
+      min-width:600px;
+    }
+    .cal-popup-header {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:16px; gap:12px;
+    }
+    .cal-trip-label {
+      font-size:14px; color:#70757a; font-weight:500;
+    }
+    .cal-reset-btn {
+      font-size:14px; color:#1a73e8; cursor:pointer; font-weight:500;
+    }
+    .cal-reset-btn:hover { text-decoration:underline; }
+    .cal-nav-btn {
+      width:32px; height:32px; border-radius:50%; border:none; background:transparent;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; color:#70757a;
+      transition:background .15s;
+    }
+    .cal-nav-btn:hover { background:#f8f9fa; }
+    .cal-nav-btn:disabled { opacity:0.3; cursor:default; }
+    .cal-nav-btn:disabled:hover { background:transparent; }
+
+    .cal-months { display:flex; gap:32px; }
+    .cal-month { flex:1; }
+    .cal-month-title {
+      text-align:center; font-size:14px; font-weight:500; color:#202124;
+      margin-bottom:12px;
+    }
+    .cal-grid {
+      display:grid; grid-template-columns:repeat(7,1fr); gap:2px;
+    }
+    .cal-dow {
+      font-size:12px; color:#70757a; text-align:center;
+      padding:4px 0; font-weight:500;
+    }
+    .cal-day {
+      width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+      border-radius:50%; font-size:13px; cursor:pointer; margin:1px auto;
+      color:#202124; transition:background .12s;
+    }
+    .cal-day:hover:not(.disabled):not(.selected) { background:#f8f9fa; }
+    .cal-day.disabled { color:#bdc1c6; cursor:default; pointer-events:none; }
+    .cal-day.today:not(.selected) { font-weight:700; }
+    .cal-day.selected {
+      background:#1a73e8; color:#fff; font-weight:500;
+    }
+    .cal-day.in-range {
+      background:#e8f0fe; border-radius:0; color:#1a73e8;
+    }
+    .cal-day.range-start {
+      background:#1a73e8; color:#fff;
+      border-radius:50% 0 0 50%;
+    }
+    .cal-day.range-end {
+      background:#1a73e8; color:#fff;
+      border-radius:0 50% 50% 0;
+    }
+    .cal-day.range-start.range-end { border-radius:50%; }
+
+    .cal-footer {
+      display:flex; justify-content:flex-end; align-items:center;
+      margin-top:16px; padding-top:12px; border-top:1px solid #f1f3f4;
+    }
+    .cal-done-btn {
+      background:#1a73e8; color:#fff; border:none; border-radius:24px;
+      padding:8px 24px; font-size:14px; font-weight:500; cursor:pointer;
+      transition:background .15s;
+    }
+    .cal-done-btn:hover { background:#1557b0; }
+
+    /* ── Results ──────────────────────────────────────── */
+    .result-card {
+      background:#fff; border:1px solid #dadce0; border-radius:12px;
+      transition:box-shadow .15s;
+    }
+    .result-card:hover { box-shadow:0 2px 12px rgba(0,0,0,.1); }
+    .result-card.best-price { border-color:#1a73e8; }
+
+    .tag {
+      display:inline-block; font-size:12px; font-weight:500;
+      padding:3px 10px; border-radius:16px;
+    }
+    .tag-best    { background:#e8f0fe; color:#1a73e8; }
+    .tag-nonstop { background:#e6f4ea; color:#137333; }
+    .tag-stop    { background:#f1f3f4; color:#5f6368; }
+    .tag-2ow     { background:#fef3e0; color:#e37400; }
+
+    .leg-time   { font-size:20px; font-weight:500; color:#202124; line-height:1; }
+    .leg-code   { font-size:12px; color:#70757a; margin-top:2px; }
+    .leg-line   { flex:1; height:1px; background:#dadce0; position:relative; margin:0 8px; }
+    .leg-line::after {
+      content:"✈"; position:absolute; left:50%; top:50%;
+      transform:translate(-50%,-60%); font-size:12px;
+      background:#fff; padding:0 4px; color:#9aa0a6;
+    }
+    .leg-duration { font-size:12px; color:#70757a; text-align:center; margin-bottom:4px; }
+
+    .price-big { font-size:24px; font-weight:500; color:#202124; }
+    .price-sub { font-size:12px; color:#70757a; }
+
+    .date-chip {
+      background:#fff; border:1px solid #dadce0; border-radius:12px;
+      padding:12px 8px; text-align:center; cursor:pointer;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    .date-chip:hover { border-color:#1a73e8; box-shadow:0 1px 6px rgba(0,0,0,.1); }
+    .date-chip.best-date { border-color:#1a73e8; }
+    .date-chip .dc-date  { font-size:13px; font-weight:500; color:#202124; }
+    .date-chip .dc-ret   { font-size:11px; color:#70757a; margin-top:2px; }
+    .date-chip .dc-price { font-size:16px; font-weight:500; margin-top:6px; color:#202124; }
+    .date-chip.best-date .dc-price { color:#1a73e8; }
+
+    /* ── Watch panel ──────────────────────────────────── */
+    .watch-panel {
+      background:#fff; border:1px solid #dadce0; border-radius:12px;
+    }
+    .watch-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 0; border-bottom:1px solid #f1f3f4;
+    }
     .watch-row:last-child { border-bottom:none; }
 
-    /* Toggle switch */
-    .toggle-wrap { display:flex; align-items:center; gap:8px; cursor:pointer; }
-    .toggle      { width:36px; height:20px; background:#3a3a3c; border-radius:10px; position:relative; transition:background 0.2s; flex-shrink:0; }
-    .toggle.on   { background:#fff; }
-    .toggle::after { content:""; position:absolute; width:16px; height:16px; background:#000; border-radius:8px; top:2px; left:2px; transition:transform 0.2s; }
-    .toggle.on::after { transform:translateX(16px); }
+    /* ── Modal ────────────────────────────────────────── */
+    .modal-bg {
+      position:fixed; inset:0; background:rgba(0,0,0,.4);
+      display:flex; align-items:center; justify-content:center; z-index:200;
+    }
+    .modal {
+      background:#fff; border-radius:16px; padding:28px; width:360px;
+      box-shadow:0 8px 32px rgba(0,0,0,.2);
+    }
+
+    /* ── Field label ──────────────────────────────────── */
+    .field-label {
+      font-size:11px; font-weight:600; letter-spacing:.06em;
+      text-transform:uppercase; color:#70757a; margin-bottom:6px; display:block;
+    }
+    .field-input {
+      width:100%; border:1px solid #dadce0; border-radius:8px;
+      padding:10px 14px; font-size:15px; color:#202124; outline:none;
+      font-family:inherit; background:#fff; transition:border-color .15s, box-shadow .15s;
+    }
+    .field-input:focus {
+      border-color:#1a73e8; box-shadow:0 0 0 2px rgba(26,115,232,.2);
+    }
+    select.field-input option { background:#fff; }
+
+    /* ── Spinner ──────────────────────────────────────── */
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spin { animation:spin .8s linear infinite; }
+
+    /* ── RT divider ───────────────────────────────────── */
+    .rt-divider {
+      display:flex; align-items:center; gap:8px;
+      font-size:11px; font-weight:600; letter-spacing:.08em;
+      text-transform:uppercase; color:#9aa0a6; margin:12px 0;
+    }
+    .rt-divider::before, .rt-divider::after {
+      content:""; flex:1; height:1px; background:#f1f3f4;
+    }
   </style>
 </head>
-<body class="font-sans min-h-screen px-4 pb-24">
+<body class="font-sans min-h-screen">
 
-  <!-- Header -->
-  <header class="max-w-2xl mx-auto pt-12 pb-8 flex items-center justify-between">
-    <div>
-      <h1 class="text-4xl font-bold tracking-tight">✦ fli</h1>
-      <p class="text-xs mt-1" style="color:#636366">Google Flights, direct</p>
-    </div>
-    <button onclick="toggleWatchPanel()" class="text-xs px-4 py-2 rounded-full border transition-all" style="border-color:#3a3a3c;color:#aeaeb2" id="watch-btn">
-      Watching <span id="watch-count">0</span>
-    </button>
-  </header>
-
-  <!-- Search panel -->
-  <div class="max-w-2xl mx-auto rounded-2xl p-6 border mb-6" style="background:#111;border-color:#2c2c2e">
-
-    <div class="flex gap-6 mb-6" style="border-bottom:1px solid #2c2c2e">
-      <button id="tab-btn-flights" class="tab-active pb-3 text-sm font-semibold transition-all" onclick="switchTab('flights')">Search Flights</button>
-      <button id="tab-btn-dates"   class="tab-inactive pb-3 text-sm font-semibold transition-all" onclick="switchTab('dates')">Cheapest Dates</button>
-    </div>
-
-    <!-- FLIGHTS TAB -->
-    <div id="tab-flights">
-      <div class="flex flex-wrap gap-2 mb-5" id="trip-pills">
-        <button class="pill-active pill px-4 py-1.5 rounded-full text-sm font-medium transition-all"  onclick="setTripType('one_way',this)">One Way</button>
-        <button class="pill-inactive pill px-4 py-1.5 rounded-full text-sm font-medium transition-all" onclick="setTripType('round_trip',this)">Round Trip</button>
-        <button class="pill-inactive pill px-4 py-1.5 rounded-full text-sm font-medium transition-all" onclick="setTripType('two_oneway',this)" title="Search legs separately — often cheaper">2x One-Way ✦</button>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <div><label class="field-label">From</label><input id="f-origin" class="field-input uppercase" type="text" placeholder="JFK" maxlength="3"/></div>
-        <div><label class="field-label">To</label><input id="f-destination" class="field-input uppercase" type="text" placeholder="LAX" maxlength="3"/></div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <div><label class="field-label">Depart</label><input id="f-date" class="field-input" type="date"/></div>
-        <div id="f-return-wrap" style="visibility:hidden"><label class="field-label">Return</label><input id="f-return-date" class="field-input" type="date"/></div>
-      </div>
-
-      <div class="grid grid-cols-3 gap-3 mb-3">
-        <div><label class="field-label">Cabin</label>
-          <select id="f-seat" class="field-input">
-            <option value="economy">Economy</option>
-            <option value="premium_economy">Prem. Economy</option>
-            <option value="business">Business</option>
-            <option value="first">First</option>
-          </select>
-        </div>
-        <div><label class="field-label">Adults</label><input id="f-adults" class="field-input" type="number" value="1" min="1" max="9"/></div>
-        <div><label class="field-label">Stops</label>
-          <select id="f-stops" class="field-input">
-            <option value="any">Any</option>
-            <option value="nonstop">Nonstop</option>
-            <option value="one">≤ 1 stop</option>
-            <option value="two">≤ 2 stops</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Bags row -->
-      <div class="flex items-center gap-6 mb-4 px-1">
-        <div class="flex items-center gap-3">
-          <label class="field-label mb-0">Checked bags</label>
-          <select id="f-checked-bags" class="field-input" style="width:80px;padding:8px 10px;font-size:13px">
-            <option value="0">0</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-          </select>
-        </div>
-        <label class="toggle-wrap" onclick="toggleCarryOn('f-carry-on')">
-          <div class="toggle" id="f-carry-on"></div>
-          <span class="text-xs" style="color:#aeaeb2">Carry-on</span>
-        </label>
-        <span class="text-xs" style="color:#48484a">Prices include bag fees</span>
-      </div>
-
-      <button onclick="searchFlights()" class="w-full bg-white text-black font-semibold py-3 rounded-xl text-sm hover:bg-gray-100 transition-all">Search Flights</button>
-    </div>
-
-    <!-- DATES TAB -->
-    <div id="tab-dates" class="hidden">
-      <div class="flex gap-2 mb-5">
-        <button class="pill-active pill px-4 py-1.5 rounded-full text-sm font-medium transition-all"  onclick="setDateTripType('one_way',this)">One Way</button>
-        <button class="pill-inactive pill px-4 py-1.5 rounded-full text-sm font-medium transition-all" onclick="setDateTripType('round_trip',this)">Round Trip</button>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <div><label class="field-label">From</label><input id="d-origin" class="field-input uppercase" type="text" placeholder="JFK" maxlength="3"/></div>
-        <div><label class="field-label">To</label><input id="d-destination" class="field-input uppercase" type="text" placeholder="LAX" maxlength="3"/></div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 mb-3">
-        <div><label class="field-label">Range Start</label><input id="d-from" class="field-input" type="date"/></div>
-        <div><label class="field-label">Range End</label><input id="d-to" class="field-input" type="date"/></div>
-      </div>
-
-      <div class="grid grid-cols-3 gap-3 mb-3">
-        <div><label class="field-label">Cabin</label>
-          <select id="d-seat" class="field-input">
-            <option value="economy">Economy</option>
-            <option value="premium_economy">Prem. Economy</option>
-            <option value="business">Business</option>
-            <option value="first">First</option>
-          </select>
-        </div>
-        <div><label class="field-label">Adults</label><input id="d-adults" class="field-input" type="number" value="1" min="1" max="9"/></div>
-        <div id="d-duration-wrap" class="hidden">
-          <label class="field-label">Stay (days)</label>
-          <input id="d-duration" class="field-input" type="number" placeholder="e.g. 7" min="1" max="30"/>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-6 mb-4 px-1">
-        <div class="flex items-center gap-3">
-          <label class="field-label mb-0">Checked bags</label>
-          <select id="d-checked-bags" class="field-input" style="width:80px;padding:8px 10px;font-size:13px">
-            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
-          </select>
-        </div>
-        <label class="toggle-wrap" onclick="toggleCarryOn('d-carry-on')">
-          <div class="toggle" id="d-carry-on"></div>
-          <span class="text-xs" style="color:#aeaeb2">Carry-on</span>
-        </label>
-      </div>
-
-      <button onclick="searchDates()" class="w-full bg-white text-black font-semibold py-3 rounded-xl text-sm hover:bg-gray-100 transition-all">Find Cheapest Dates</button>
-    </div>
+  <!-- Hero section -->
+  <div class="hero pt-10 pb-32 text-center relative">
+    <div class="hero-mountains"></div>
+    <h1 class="text-5xl font-light tracking-tight text-gray-800 relative z-10">Flights</h1>
   </div>
 
-  <!-- Results -->
-  <div id="results" class="max-w-2xl mx-auto"></div>
+  <!-- Search card (overlaps hero) -->
+  <div class="max-w-3xl mx-auto px-4 -mt-20 relative z-10">
+    <div class="search-card p-5">
 
-  <!-- Watch panel (slide-in from right, actually just shown below header) -->
-  <div id="watch-panel" class="hidden max-w-2xl mx-auto rounded-2xl p-6 border mb-6" style="background:#111;border-color:#2c2c2e">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="font-semibold text-sm">Price Watches</h2>
-      <span class="text-xs" style="color:#636366">ntfy.sh alerts your phone when price hits target</span>
+      <!-- Trip type / passengers / cabin pills -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button id="pill-trip" class="ctrl-pill text-sm" onclick="openTripPicker()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span id="pill-trip-label">One way</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button id="pill-pax" class="ctrl-pill text-sm" onclick="openPaxPicker()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span id="pill-pax-label">1</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button id="pill-cabin" class="ctrl-pill text-sm" onclick="openCabinPicker()">
+          <span id="pill-cabin-label">Economy</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+
+        <!-- Tab: Search / Cheapest Dates -->
+        <div class="ml-auto flex border-b-0">
+          <button class="tab-btn active" id="tab-btn-flights" onclick="switchTab('flights')">Search flights</button>
+          <button class="tab-btn" id="tab-btn-dates" onclick="switchTab('dates')">Cheapest dates</button>
+        </div>
+      </div>
+
+      <!-- Dropdown overlays (trip/pax/cabin) -->
+      <div id="trip-dropdown" class="hidden absolute z-50 bg-white rounded-xl shadow-xl border border-gray-200 p-2 w-44" style="top:90px">
+        <div onclick="setTripType('one_way')" class="px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-gray-50">One way</div>
+        <div onclick="setTripType('round_trip')" class="px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-gray-50">Round trip</div>
+        <div onclick="setTripType('two_oneway')" class="px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-gray-50">2× One-way ✦</div>
+      </div>
+      <div id="pax-dropdown" class="hidden absolute z-50 bg-white rounded-xl shadow-xl border border-gray-200 p-3 w-48" style="top:90px">
+        <label class="field-label">Adults</label>
+        <input id="f-adults" type="number" value="1" min="1" max="9" class="field-input mb-2"/>
+      </div>
+      <div id="cabin-dropdown" class="hidden absolute z-50 bg-white rounded-xl shadow-xl border border-gray-200 p-2 w-48" style="top:90px">
+        <div onclick="setCabin('economy')" class="px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-gray-50">Economy</div>
+        <div onclick="setCabin('premium_economy')" class="px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-gray-50">Prem. Economy</div>
+        <div onclick="setCabin('business')" class="px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-gray-50">Business</div>
+        <div onclick="setCabin('first')" class="px-4 py-2 rounded-lg text-sm cursor-pointer hover:bg-gray-50">First</div>
+      </div>
+
+      <!-- FLIGHTS TAB -->
+      <div id="tab-flights">
+        <!-- Route row -->
+        <div class="flex items-center gap-2 mb-3">
+          <div class="route-input-wrap flex-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="11" r="3"/><path d="M12 2a9 9 0 0 1 9 9c0 5.25-9 13-9 13S3 16.25 3 11a9 9 0 0 1 9-9z"/></svg>
+            <input id="f-origin" class="route-input uppercase" type="text" placeholder="Where from?" maxlength="3"/>
+          </div>
+          <button class="swap-btn" onclick="swapAirports()" title="Swap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          </button>
+          <div class="route-input-wrap flex-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <input id="f-destination" class="route-input uppercase" type="text" placeholder="Where to?" maxlength="3"/>
+          </div>
+        </div>
+
+        <!-- Date row -->
+        <div class="flex items-center gap-2 mb-4 relative" id="date-row-flights">
+          <div class="date-trigger flex-1" id="depart-trigger" onclick="openCal('depart')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#70757a" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div>
+              <div class="date-trigger-label">Departure</div>
+              <div class="date-trigger-value" id="depart-display">Select date</div>
+            </div>
+          </div>
+          <div class="date-trigger flex-1" id="return-trigger" onclick="openCal('return')" style="display:none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#70757a" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <div>
+              <div class="date-trigger-label">Return</div>
+              <div class="date-trigger-value" id="return-display">Select date</div>
+            </div>
+          </div>
+
+          <!-- Calendar popup -->
+          <div class="cal-popup hidden" id="cal-popup">
+            <div class="cal-popup-header">
+              <span class="cal-trip-label" id="cal-trip-label">One way</span>
+              <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+                <span class="cal-reset-btn" onclick="calReset()">Reset</span>
+                <button class="cal-nav-btn" id="cal-prev" onclick="calNav(-1)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                </button>
+                <button class="cal-nav-btn" id="cal-next" onclick="calNav(1)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="cal-months" id="cal-months"></div>
+            <div class="cal-footer">
+              <button class="cal-done-btn" onclick="calDone()">Done</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Extra filters row -->
+        <div class="flex flex-wrap items-center gap-3 mb-4">
+          <div>
+            <label class="field-label">Stops</label>
+            <select id="f-stops" class="field-input" style="width:130px;padding:8px 12px">
+              <option value="any">Any stops</option>
+              <option value="nonstop">Nonstop only</option>
+              <option value="one">≤ 1 stop</option>
+              <option value="two">≤ 2 stops</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Checked bags</label>
+            <select id="f-checked-bags" class="field-input" style="width:80px;padding:8px 12px">
+              <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+            </select>
+          </div>
+          <label class="flex items-center gap-2 cursor-pointer mt-4">
+            <div class="relative">
+              <input id="f-carry-on" type="checkbox" class="sr-only peer"/>
+              <div class="w-9 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-500 transition-colors"></div>
+              <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+            </div>
+            <span class="text-sm text-gray-600">Carry-on</span>
+          </label>
+          <div class="ml-auto">
+            <button onclick="searchFlights()" class="search-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Search
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATES TAB -->
+      <div id="tab-dates" class="hidden">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="route-input-wrap flex-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="11" r="3"/><path d="M12 2a9 9 0 0 1 9 9c0 5.25-9 13-9 13S3 16.25 3 11a9 9 0 0 1 9-9z"/></svg>
+            <input id="d-origin" class="route-input uppercase" type="text" placeholder="Where from?" maxlength="3"/>
+          </div>
+          <div class="swap-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5f6368" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          </div>
+          <div class="route-input-wrap flex-1">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <input id="d-destination" class="route-input uppercase" type="text" placeholder="Where to?" maxlength="3"/>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div><label class="field-label">Range start</label><input id="d-from" class="field-input" type="date"/></div>
+          <div><label class="field-label">Range end</label><input id="d-to" class="field-input" type="date"/></div>
+        </div>
+        <div class="flex flex-wrap items-end gap-3 mb-4">
+          <div id="d-duration-wrap" class="hidden">
+            <label class="field-label">Stay (days)</label>
+            <input id="d-duration" class="field-input" style="width:100px" type="number" placeholder="e.g. 7" min="1" max="30"/>
+          </div>
+          <div>
+            <label class="field-label">Checked bags</label>
+            <select id="d-checked-bags" class="field-input" style="width:80px;padding:8px 12px">
+              <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+            </select>
+          </div>
+          <label class="flex items-center gap-2 cursor-pointer mb-0.5">
+            <div class="relative">
+              <input id="d-carry-on" type="checkbox" class="sr-only peer"/>
+              <div class="w-9 h-5 bg-gray-200 rounded-full peer-checked:bg-blue-500 transition-colors"></div>
+              <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4"></div>
+            </div>
+            <span class="text-sm text-gray-600">Carry-on</span>
+          </label>
+          <div class="ml-auto">
+            <button onclick="searchDates()" class="search-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Find cheapest dates
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /search-card -->
+
+    <!-- Watch panel -->
+    <div id="watch-panel" class="hidden watch-panel p-5 mt-4">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-medium text-sm text-gray-800">Price watches</h2>
+        <span class="text-xs text-gray-400">Alerts via ntfy.sh</span>
+      </div>
+
+      <!-- Quick watch form -->
+      <div class="rounded-xl border border-gray-100 bg-gray-50 p-4 mb-4">
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Watch a route</div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div><label class="field-label">From</label><input id="w-origin" class="field-input uppercase" type="text" placeholder="JFK" maxlength="3"/></div>
+          <div><label class="field-label">To</label><input id="w-destination" class="field-input uppercase" type="text" placeholder="LAX" maxlength="3"/></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div><label class="field-label">Date</label><input id="w-date" class="field-input" type="date"/></div>
+          <div><label class="field-label">Target price ($)</label><input id="w-target" class="field-input" type="number" placeholder="e.g. 199" min="1"/></div>
+        </div>
+        <button onclick="quickWatch()" class="w-full mt-1 py-2 rounded-xl text-sm font-semibold bg-gray-800 text-white hover:bg-black transition-all">Add Watch</button>
+      </div>
+
+      <div id="watch-list">
+        <div class="text-sm py-4 text-center text-gray-400">No watches yet.</div>
+      </div>
     </div>
-    <div id="watch-list"><div class="text-xs py-4 text-center" style="color:#48484a">No watches yet — search a flight and hit Watch.</div></div>
+
+    <!-- Results -->
+    <div id="results" class="mt-4 pb-16"></div>
   </div>
+
+  <!-- Watch button (top right) -->
+  <button onclick="toggleWatchPanel()" id="watch-btn"
+    class="fixed top-4 right-4 z-50 flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 text-sm text-gray-600 shadow-sm hover:shadow-md transition-shadow">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    Watching <span id="watch-count" class="font-semibold text-gray-800">0</span>
+  </button>
 
   <!-- Watch modal -->
   <div id="watch-modal" class="modal-bg hidden">
     <div class="modal">
-      <h3 class="font-semibold mb-1" id="modal-title">Watch this route</h3>
-      <p class="text-xs mb-5" style="color:#636366">Get a push notification when price drops to your target</p>
+      <h3 class="font-medium text-base mb-1 text-gray-800" id="modal-title">Watch this route</h3>
+      <p class="text-sm mb-5 text-gray-500">Get a push notification when price drops to your target</p>
       <label class="field-label">Target price ($)</label>
       <input id="modal-price" class="field-input mb-4" type="number" placeholder="e.g. 199" min="1"/>
       <label class="field-label">Label (optional)</label>
       <input id="modal-label" class="field-input mb-6" type="text" placeholder="e.g. Summer trip"/>
       <div class="flex gap-3">
-        <button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl text-sm font-medium" style="background:#1c1c1e;color:#aeaeb2">Cancel</button>
-        <button onclick="confirmWatch()" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-white text-black">Watch</button>
+        <button onclick="closeModal()" class="flex-1 py-2.5 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-50">Cancel</button>
+        <button onclick="confirmWatch()" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-blue-500 text-white hover:bg-blue-700">Watch</button>
       </div>
     </div>
   </div>
 
 <script>
+// ── State ─────────────────────────────────────────────────────────────────────
 let flightsTripType = 'one_way';
-let datesTripType = 'one_way';
-let pendingWatch = null; // flight data pending modal confirmation
+let datesTripType   = 'one_way';
+let selectedCabin   = 'economy';
+let pendingWatch    = null;
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// Calendar state
+let calMode        = 'depart';    // 'depart' or 'return'
+let calOffset      = 0;           // months offset from today
+let departDate     = null;        // Date object
+let returnDate     = null;        // Date object
+let calSelecting   = 'depart';   // which leg we're currently picking
+
+const CAB_LABELS = {
+  economy:'Economy', premium_economy:'Prem. Economy', business:'Business', first:'First'
+};
+const TRIP_LABELS = {
+  one_way:'One way', round_trip:'Round trip', two_oneway:'2× One-way'
+};
+const DOW = ['S','M','T','W','T','F','S'];
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 (function() {
   const pad = n => String(n).padStart(2,'0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   const add = (d,n) => { const x=new Date(d); x.setDate(d.getDate()+n); return x; };
   const t = new Date();
-  document.getElementById('f-date').value = fmt(add(t,14));
-  document.getElementById('f-return-date').value = fmt(add(t,21));
   document.getElementById('d-from').value = fmt(add(t,14));
-  document.getElementById('d-to').value = fmt(add(t,56));
+  document.getElementById('d-to').value   = fmt(add(t,56));
+  // Default depart date: 2 weeks out
+  departDate = add(t, 14);
+  updateDateTriggers();
   loadWatches();
+  document.addEventListener('click', outsideClickHandler);
 })();
 
-// ── Tabs / pills ──────────────────────────────────────────────────────────────
+// ── Tabs ──────────────────────────────────────────────────────────────────────
 function switchTab(tab) {
-  const isF = tab==='flights';
-  document.getElementById('tab-flights').classList.toggle('hidden',!isF);
-  document.getElementById('tab-dates').classList.toggle('hidden',isF);
-  document.getElementById('tab-btn-flights').className = isF ? 'tab-active pb-3 text-sm font-semibold transition-all' : 'tab-inactive pb-3 text-sm font-semibold transition-all';
-  document.getElementById('tab-btn-dates').className   = !isF ? 'tab-active pb-3 text-sm font-semibold transition-all' : 'tab-inactive pb-3 text-sm font-semibold transition-all';
-  document.getElementById('results').innerHTML='';
+  const isF = tab === 'flights';
+  document.getElementById('tab-flights').classList.toggle('hidden', !isF);
+  document.getElementById('tab-dates').classList.toggle('hidden', isF);
+  document.getElementById('tab-btn-flights').classList.toggle('active', isF);
+  document.getElementById('tab-btn-dates').classList.toggle('active', !isF);
+  document.getElementById('results').innerHTML = '';
+  closeCal();
 }
 
-function setTripType(type,el) {
-  flightsTripType=type;
-  document.querySelectorAll('#trip-pills .pill').forEach(p=>p.className=p.className.replace('pill-active','pill-inactive'));
-  el.className=el.className.replace('pill-inactive','pill-active');
-  const showReturn = type==='round_trip'||type==='two_oneway';
-  document.getElementById('f-return-wrap').style.visibility = showReturn?'visible':'hidden';
+// ── Pill pickers ──────────────────────────────────────────────────────────────
+function openTripPicker()  { toggleDrop('trip-dropdown'); }
+function openPaxPicker()   { toggleDrop('pax-dropdown'); }
+function openCabinPicker() { toggleDrop('cabin-dropdown'); }
+
+function toggleDrop(id) {
+  ['trip-dropdown','pax-dropdown','cabin-dropdown'].forEach(d => {
+    if (d !== id) document.getElementById(d).classList.add('hidden');
+  });
+  document.getElementById(id).classList.toggle('hidden');
 }
 
-function setDateTripType(type,el) {
-  datesTripType=type;
-  el.closest('.flex').querySelectorAll('.pill').forEach(p=>p.className=p.className.replace('pill-active','pill-inactive'));
-  el.className=el.className.replace('pill-inactive','pill-active');
-  document.getElementById('d-duration-wrap').classList.toggle('hidden',type!=='round_trip');
+function outsideClickHandler(e) {
+  const drops = ['trip-dropdown','pax-dropdown','cabin-dropdown'];
+  drops.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el.classList.contains('hidden') && !el.contains(e.target) &&
+        !document.getElementById('pill-trip').contains(e.target) &&
+        !document.getElementById('pill-pax').contains(e.target) &&
+        !document.getElementById('pill-cabin').contains(e.target)) {
+      el.classList.add('hidden');
+    }
+  });
+  const popup = document.getElementById('cal-popup');
+  if (!popup.classList.contains('hidden') &&
+      !popup.contains(e.target) &&
+      !document.getElementById('depart-trigger').contains(e.target) &&
+      !(document.getElementById('return-trigger') && document.getElementById('return-trigger').contains(e.target))) {
+    closeCal();
+  }
 }
 
-function toggleCarryOn(id) {
-  const el=document.getElementById(id);
-  el.classList.toggle('on');
+function setTripType(type) {
+  flightsTripType = type;
+  document.getElementById('pill-trip-label').textContent = TRIP_LABELS[type];
+  document.getElementById('trip-dropdown').classList.add('hidden');
+  const showReturn = type === 'round_trip' || type === 'two_oneway';
+  document.getElementById('return-trigger').style.display = showReturn ? 'flex' : 'none';
+  document.getElementById('cal-trip-label').textContent = TRIP_LABELS[type];
+  if (!showReturn) returnDate = null;
+  updateDateTriggers();
 }
 
-// ── Render helpers ────────────────────────────────────────────────────────────
-function fmtDur(m) { if(!m)return'—'; const h=Math.floor(m/60),mn=m%60; return mn?`${h}h ${mn}m`:`${h}h`; }
+function setCabin(cab) {
+  selectedCabin = cab;
+  document.getElementById('pill-cabin-label').textContent = CAB_LABELS[cab];
+  document.getElementById('cabin-dropdown').classList.add('hidden');
+}
 
+function swapAirports() {
+  const o = document.getElementById('f-origin');
+  const d = document.getElementById('f-destination');
+  [o.value, d.value] = [d.value, o.value];
+}
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+function openCal(mode) {
+  calMode = mode;
+  calSelecting = mode;
+  const popup = document.getElementById('cal-popup');
+  popup.classList.remove('hidden');
+  document.getElementById('depart-trigger').classList.toggle('open', true);
+  // Set offset so current depart month is visible
+  if (departDate) {
+    const today = new Date();
+    calOffset = (departDate.getFullYear() - today.getFullYear()) * 12 +
+                (departDate.getMonth() - today.getMonth());
+    calOffset = Math.max(0, calOffset);
+  }
+  renderCal();
+}
+function closeCal() {
+  document.getElementById('cal-popup').classList.add('hidden');
+  document.getElementById('depart-trigger').classList.remove('open');
+  if (document.getElementById('return-trigger'))
+    document.getElementById('return-trigger').classList.remove('open');
+}
+function calDone() { closeCal(); updateDateTriggers(); }
+function calReset() {
+  departDate = null;
+  returnDate = null;
+  updateDateTriggers();
+  renderCal();
+}
+function calNav(dir) {
+  const today = new Date();
+  const newOffset = calOffset + dir;
+  if (newOffset < 0) return;
+  calOffset = newOffset;
+  renderCal();
+  document.getElementById('cal-prev').disabled = calOffset === 0;
+}
+
+function renderCal() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const base = new Date(today.getFullYear(), today.getMonth() + calOffset, 1);
+  document.getElementById('cal-prev').disabled = calOffset === 0;
+
+  const months = [
+    { year: base.getFullYear(), month: base.getMonth() },
+    { year: new Date(base.getFullYear(), base.getMonth() + 1, 1).getFullYear(),
+      month: new Date(base.getFullYear(), base.getMonth() + 1, 1).getMonth() },
+  ];
+
+  document.getElementById('cal-months').innerHTML = months.map(m => renderMonth(m.year, m.month, today)).join('');
+}
+
+function renderMonth(year, month, today) {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  let cells = '';
+  // empty cells
+  for (let i = 0; i < firstDay; i++) cells += `<div></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    date.setHours(0,0,0,0);
+    const isPast = date < today;
+    const isToday = date.getTime() === today.getTime();
+
+    let cls = 'cal-day';
+    if (isPast) { cls += ' disabled'; }
+    else {
+      const dVal = departDate ? new Date(departDate.getTime()) : null;
+      const rVal = returnDate ? new Date(returnDate.getTime()) : null;
+      if (dVal) dVal.setHours(0,0,0,0);
+      if (rVal) rVal.setHours(0,0,0,0);
+
+      const isDepart = dVal && date.getTime() === dVal.getTime();
+      const isReturn = rVal && date.getTime() === rVal.getTime();
+      const inRange  = dVal && rVal && date > dVal && date < rVal;
+
+      if (isDepart && isReturn) cls += ' selected range-start range-end';
+      else if (isDepart && rVal) cls += ' cal-day range-start';
+      else if (isReturn && dVal) cls += ' cal-day range-end';
+      else if (isDepart || isReturn) cls += ' selected';
+      else if (inRange) cls += ' in-range';
+      if (isToday) cls += ' today';
+    }
+
+    const ts = date.getTime();
+    cells += `<div class="${cls}" onclick="calDayClick(${ts})">${d}</div>`;
+  }
+
+  return `<div class="cal-month">
+    <div class="cal-month-title">${MONTHS[month]} ${year}</div>
+    <div class="cal-grid">
+      ${DOW.map(d=>`<div class="cal-dow">${d}</div>`).join('')}
+      ${cells}
+    </div>
+  </div>`;
+}
+
+function calDayClick(ts) {
+  const clicked = new Date(ts);
+  const tripType = flightsTripType;
+  const isRT = tripType === 'round_trip' || tripType === 'two_oneway';
+
+  if (!isRT) {
+    departDate = clicked;
+    calSelecting = 'depart';
+  } else {
+    if (calSelecting === 'depart' || !departDate) {
+      departDate = clicked;
+      returnDate = null;
+      calSelecting = 'return';
+    } else if (calSelecting === 'return') {
+      if (clicked <= departDate) {
+        departDate = clicked;
+        returnDate = null;
+        calSelecting = 'return';
+      } else {
+        returnDate = clicked;
+        calSelecting = 'depart';
+      }
+    }
+  }
+  renderCal();
+  if (!isRT) { calDone(); }
+  else if (departDate && returnDate) { calDone(); }
+}
+
+function updateDateTriggers() {
+  const fmt = d => {
+    if (!d) return 'Select date';
+    return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+  };
+  document.getElementById('depart-display').textContent = fmt(departDate);
+  document.getElementById('return-display').textContent = fmt(returnDate);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmtDate(d) {
+  if (!d) return null;
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function fmtDur(m) {
+  if (!m) return '—';
+  const h = Math.floor(m/60), mn = m%60;
+  return mn ? `${h}h ${mn}m` : `${h}h`;
+}
 function stopsTag(s) {
-  if(s===0) return `<span class="tag tag-nonstop">Nonstop</span>`;
-  if(s===1) return `<span class="tag tag-stop">1 stop</span>`;
+  if (s === 0) return `<span class="tag tag-nonstop">Nonstop</span>`;
+  if (s === 1) return `<span class="tag tag-stop">1 stop</span>`;
   return `<span class="tag tag-stop">${s} stops</span>`;
 }
-
-function renderLeg(f) {
-  const first=f.legs[0], last=f.legs[f.legs.length-1];
-  const airlines=[...new Set(f.legs.map(l=>l.airline))].join(', ');
-  return `
-    <div class="leg-row">
-      <div class="text-center" style="min-width:58px">
-        <div class="leg-time">${first.departure_time||'—'}</div>
-        <div class="leg-code">${first.departure_airport}</div>
-        <div class="leg-date">${first.departure_date||''}</div>
-      </div>
-      <div class="leg-line-wrap">
-        <div class="leg-duration">${fmtDur(f.duration)}</div>
-        <div class="leg-line" style="width:100%"></div>
-        ${stopsTag(f.stops)}
-      </div>
-      <div class="text-center" style="min-width:58px">
-        <div class="leg-time">${last.arrival_time||'—'}</div>
-        <div class="leg-code">${last.arrival_airport}</div>
-        <div class="leg-date">${last.arrival_date||''}</div>
-      </div>
-    </div>
-    <div class="mt-2 text-xs" style="color:#636366">${airlines}</div>`;
+function spinner(msg) {
+  return `<div class="text-center py-16">
+    <div class="w-8 h-8 border-2 spin rounded-full mx-auto mb-4" style="border-color:#dadce0;border-top-color:#1a73e8"></div>
+    <div class="text-sm text-gray-500">${msg}</div>
+  </div>`;
+}
+function errBox(msg) {
+  return `<div class="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">${msg}</div>`;
 }
 
-function hasBags() {
-  const bags = parseInt(document.getElementById('f-checked-bags')?.value||0);
-  const co = document.getElementById('f-carry-on')?.classList.contains('on');
-  return bags>0||co;
+// ── Render flight card ────────────────────────────────────────────────────────
+function renderLeg(f) {
+  const first = f.legs[0], last = f.legs[f.legs.length-1];
+  const airlines = [...new Set(f.legs.map(l=>l.airline))].join(', ');
+  return `<div class="flex items-center gap-2">
+    <div class="text-center" style="min-width:52px">
+      <div class="leg-time">${first.departure_time||'—'}</div>
+      <div class="leg-code">${first.departure_airport}</div>
+    </div>
+    <div class="flex-1 flex flex-col items-center gap-1">
+      <div class="leg-duration">${fmtDur(f.duration)}</div>
+      <div class="leg-line" style="width:100%"></div>
+      ${stopsTag(f.stops)}
+    </div>
+    <div class="text-center" style="min-width:52px">
+      <div class="leg-time">${last.arrival_time||'—'}</div>
+      <div class="leg-code">${last.arrival_airport}</div>
+    </div>
+  </div>
+  <div class="text-xs text-gray-400 mt-1">${airlines}</div>`;
 }
 
 function watchBtn(flightData) {
   const d = JSON.stringify(flightData).replace(/"/g,'&quot;');
-  return `<button onclick='openWatch(${d})' class="text-xs px-3 py-1.5 rounded-full border transition-all mt-3" style="border-color:#3a3a3c;color:#636366;hover:color:#fff">＋ Watch price</button>`;
+  return `<button onclick='openWatch(${d})'
+    class="mt-3 text-xs text-blue-600 border border-blue-200 rounded-full px-3 py-1 hover:bg-blue-50 transition-colors">
+    + Watch price
+  </button>`;
 }
 
 function renderFlights(flights, searchCtx) {
-  if(!flights.length) return `<div class="text-center py-12" style="color:#636366">No flights found.</div>`;
-  const getPrice = f=>(f.type==='round_trip'||f.type==='two_oneway')?f.total_price:f.price;
+  if (!flights.length) return `<div class="text-center py-12 text-gray-400">No flights found.</div>`;
+  const getPrice = f => (f.type==='round_trip'||f.type==='two_oneway') ? f.total_price : f.price;
   const minPrice = Math.min(...flights.map(getPrice));
 
-  return flights.map(f=>{
-    const price=getPrice(f);
-    const isBest=price===minPrice;
-    const isRT=f.type==='round_trip'||f.type==='two_oneway';
-    const bagsNote = hasBags() ? `<span class="tag tag-bags ml-1">incl. bags</span>` : '';
+  return flights.map(f => {
+    const price = getPrice(f);
+    const isBest = price === minPrice;
+    const isRT = f.type === 'round_trip' || f.type === 'two_oneway';
 
-    return `
-      <div class="flip-card mb-3 ${isBest?'best':''}">
-        <div class="p-5">
-          <div class="flex flex-wrap gap-2 mb-3">
-            ${isBest?`<span class="tag tag-best">Best price</span>`:''}
-            ${f.type==='two_oneway'?`<span class="tag tag-2ow">SEPARATE TICKETS</span>`:''}
-            ${bagsNote}
+    return `<div class="result-card mb-3 ${isBest?'best-price':''} p-5">
+      <div class="flex flex-wrap gap-2 mb-3">
+        ${isBest ? `<span class="tag tag-best">Best price</span>` : ''}
+        ${f.type==='two_oneway' ? `<span class="tag tag-2ow">Separate tickets</span>` : ''}
+      </div>
+      ${isRT ? `
+        ${renderLeg(f.outbound)}
+        <div class="rt-divider my-3">Return</div>
+        ${renderLeg(f.return)}
+        <div class="flex items-end justify-between mt-4 pt-4 border-t border-gray-100">
+          <div>
+            <div class="text-xs text-gray-400">${f.type==='two_oneway'?'2 bookings':'Round trip'}</div>
+            ${watchBtn({...searchCtx, target_price_hint: price})}
           </div>
-          ${isRT ? `
-            ${renderLeg(f.outbound)}
-            <div class="rt-label">↩ Return</div>
-            ${renderLeg(f.return)}
-            <div class="mt-4 pt-4 flex items-end justify-between" style="border-top:1px solid #1c1c1e">
-              <div>
-                <div class="text-xs" style="color:#636366">${f.type==='two_oneway'?'Combined · 2 bookings':'Round trip'}</div>
-                ${watchBtn({...searchCtx, target_price_hint: price})}
-              </div>
-              <div class="text-right">
-                <div class="price-big">$${price.toFixed(0)}</div>
-                <div class="price-sub">${f.currency}</div>
-              </div>
-            </div>
-          ` : `
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex-1">
-                ${renderLeg(f)}
-                ${watchBtn({...searchCtx, target_price_hint: price})}
-              </div>
-              <div class="text-right shrink-0 pl-2">
-                <div class="price-big">$${price.toFixed(0)}</div>
-                <div class="price-sub">${f.currency||'USD'}</div>
-              </div>
-            </div>
-          `}
+          <div class="text-right">
+            <div class="price-big">$${price.toFixed(0)}</div>
+            <div class="price-sub">${f.currency}</div>
+          </div>
         </div>
-      </div>`;
+      ` : `
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            ${renderLeg(f)}
+            ${watchBtn({...searchCtx, target_price_hint: price})}
+          </div>
+          <div class="text-right shrink-0 pl-2">
+            <div class="price-big">$${price.toFixed(0)}</div>
+            <div class="price-sub">${f.currency||'USD'}</div>
+          </div>
+        </div>
+      `}
+    </div>`;
   }).join('');
 }
 
 function renderDates(dates) {
-  if(!dates.length) return `<div class="text-center py-12" style="color:#636366">No dates found.</div>`;
-  return `<div class="grid grid-cols-3 gap-2 sm:grid-cols-4">`+
-    dates.map((d,i)=>{
-      const label=new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',weekday:'short'});
-      const ret=d.return_date?new Date(d.return_date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}):null;
-      return `<div class="date-chip ${i===0?'best':''}">
+  if (!dates.length) return `<div class="text-center py-12 text-gray-400">No dates found.</div>`;
+  return `<div class="grid grid-cols-3 gap-2 sm:grid-cols-4">` +
+    dates.map((d,i) => {
+      const label = new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',weekday:'short'});
+      const ret = d.return_date ? new Date(d.return_date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : null;
+      return `<div class="date-chip ${i===0?'best-date':''}">
         <div class="dc-date">${label}</div>
-        ${ret?`<div class="dc-ret">→ ${ret}</div>`:''}
+        ${ret ? `<div class="dc-ret">→ ${ret}</div>` : ''}
         <div class="dc-price">$${d.price.toFixed(0)}</div>
       </div>`;
-    }).join('')+`</div>`;
-}
-
-function spinner(msg) {
-  return `<div class="text-center py-16">
-    <div class="w-7 h-7 border-2 spin mx-auto mb-4 rounded-full" style="border-color:#2c2c2e;border-top-color:#fff"></div>
-    <div class="text-sm" style="color:#636366">${msg}</div>
-  </div>`;
-}
-function errBox(msg) {
-  return `<div class="rounded-xl p-4 text-sm border" style="border-color:#2c2c2e;color:#aeaeb2">${msg}</div>`;
+    }).join('') + `</div>`;
 }
 
 // ── Search ────────────────────────────────────────────────────────────────────
 async function searchFlights() {
-  const origin = document.getElementById('f-origin').value.trim().toUpperCase();
+  const origin      = document.getElementById('f-origin').value.trim().toUpperCase();
   const destination = document.getElementById('f-destination').value.trim().toUpperCase();
-  const date = document.getElementById('f-date').value;
-  const returnDate = document.getElementById('f-return-date').value;
-  if(!origin||!destination||!date){alert('Fill in origin, destination, and date.');return;}
+  const date        = fmtDate(departDate);
+  const retDate     = fmtDate(returnDate);
 
-  const checkedBags = parseInt(document.getElementById('f-checked-bags').value||0);
-  const carryOn = document.getElementById('f-carry-on').classList.contains('on');
+  if (!origin || !destination || !date) {
+    alert('Fill in origin, destination, and departure date.'); return;
+  }
 
+  const checkedBags = parseInt(document.getElementById('f-checked-bags').value || 0);
+  const carryOn     = document.getElementById('f-carry-on').checked;
   const payload = {
     origin, destination, date,
     trip_type: flightsTripType,
-    seat_type: document.getElementById('f-seat').value,
-    adults: parseInt(document.getElementById('f-adults').value),
+    seat_type: selectedCabin,
+    adults: parseInt(document.getElementById('f-adults').value || 1),
     max_stops: document.getElementById('f-stops').value,
     checked_bags: checkedBags,
     carry_on: carryOn,
     top_n: 10,
   };
-  if((flightsTripType==='round_trip'||flightsTripType==='two_oneway')&&returnDate) payload.return_date=returnDate;
+  if ((flightsTripType==='round_trip'||flightsTripType==='two_oneway') && retDate)
+    payload.return_date = retDate;
 
-  // context for watch button
   const searchCtx = {
     origin, destination, date,
-    return_date: payload.return_date||null,
+    return_date: payload.return_date || null,
     trip_type: flightsTripType,
-    seat_type: payload.seat_type,
+    seat_type: selectedCabin,
     adults: payload.adults,
     max_stops: payload.max_stops,
   };
 
-  document.getElementById('results').innerHTML=spinner('Searching flights…');
+  document.getElementById('results').innerHTML = spinner('Searching flights…');
   try {
-    const res=await fetch('/api/search/flights',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const data=await res.json();
-    if(data.error){document.getElementById('results').innerHTML=errBox(data.error);return;}
-    document.getElementById('results').innerHTML=`
-      <div class="flex items-center justify-between mb-4">
-        <div class="font-semibold text-base">${origin} → ${destination}</div>
-        <div class="text-xs" style="color:#636366">${data.flights.length} result${data.flights.length!==1?'s':''}</div>
+    const res  = await fetch('/api/search/flights', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const data = await res.json();
+    if (data.error) { document.getElementById('results').innerHTML = errBox(data.error); return; }
+    document.getElementById('results').innerHTML = `
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-medium text-gray-800">${origin} → ${destination}</div>
+        <div class="text-sm text-gray-400">${data.flights.length} result${data.flights.length!==1?'s':''}</div>
       </div>
       ${renderFlights(data.flights, searchCtx)}`;
-  } catch(e){document.getElementById('results').innerHTML=errBox(e.message);}
+  } catch(e) { document.getElementById('results').innerHTML = errBox(e.message); }
 }
 
 async function searchDates() {
-  const origin=document.getElementById('d-origin').value.trim().toUpperCase();
-  const destination=document.getElementById('d-destination').value.trim().toUpperCase();
-  const fromDate=document.getElementById('d-from').value;
-  const toDate=document.getElementById('d-to').value;
-  if(!origin||!destination||!fromDate||!toDate){alert('Fill in all fields.');return;}
+  const origin      = document.getElementById('d-origin').value.trim().toUpperCase();
+  const destination = document.getElementById('d-destination').value.trim().toUpperCase();
+  const fromDate    = document.getElementById('d-from').value;
+  const toDate      = document.getElementById('d-to').value;
+  if (!origin || !destination || !fromDate || !toDate) { alert('Fill in all fields.'); return; }
 
-  const payload={
-    origin,destination,from_date:fromDate,to_date:toDate,
-    trip_type:datesTripType,
-    seat_type:document.getElementById('d-seat').value,
-    adults:parseInt(document.getElementById('d-adults').value),
-    duration:datesTripType==='round_trip'?(parseInt(document.getElementById('d-duration').value)||null):null,
-    checked_bags:parseInt(document.getElementById('d-checked-bags').value||0),
-    carry_on:document.getElementById('d-carry-on').classList.contains('on'),
+  const payload = {
+    origin, destination, from_date: fromDate, to_date: toDate,
+    trip_type: datesTripType,
+    seat_type: selectedCabin,
+    adults: parseInt(document.getElementById('f-adults').value || 1),
+    duration: datesTripType==='round_trip' ? (parseInt(document.getElementById('d-duration').value)||null) : null,
+    checked_bags: parseInt(document.getElementById('d-checked-bags').value || 0),
+    carry_on: document.getElementById('d-carry-on').checked,
   };
 
-  document.getElementById('results').innerHTML=spinner('Scanning dates…');
+  document.getElementById('results').innerHTML = spinner('Scanning dates…');
   try {
-    const res=await fetch('/api/search/dates',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const data=await res.json();
-    if(data.error){document.getElementById('results').innerHTML=errBox(data.error);return;}
-    document.getElementById('results').innerHTML=`
-      <div class="flex items-center justify-between mb-4">
-        <div class="font-semibold text-base">${origin} → ${destination} · Cheapest dates</div>
-        <div class="text-xs" style="color:#636366">${data.dates.length} dates</div>
+    const res  = await fetch('/api/search/dates', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const data = await res.json();
+    if (data.error) { document.getElementById('results').innerHTML = errBox(data.error); return; }
+    document.getElementById('results').innerHTML = `
+      <div class="flex items-center justify-between mb-3">
+        <div class="font-medium text-gray-800">${origin} → ${destination} · Cheapest dates</div>
+        <div class="text-sm text-gray-400">${data.dates.length} dates</div>
       </div>
       ${renderDates(data.dates)}`;
-  } catch(e){document.getElementById('results').innerHTML=errBox(e.message);}
+  } catch(e) { document.getElementById('results').innerHTML = errBox(e.message); }
 }
 
-// ── Watch modal ───────────────────────────────────────────────────────────────
+// ── Date tab trip type ────────────────────────────────────────────────────────
+// Reuses the pill-trip selector — dates tab just toggles duration field
+function setDateTripType(type, el) {
+  datesTripType = type;
+  document.getElementById('d-duration-wrap').classList.toggle('hidden', type !== 'round_trip');
+}
+
+// ── Watch ─────────────────────────────────────────────────────────────────────
 function openWatch(ctx) {
   pendingWatch = ctx;
-  document.getElementById('modal-title').textContent=`Watch ${ctx.origin} → ${ctx.destination}`;
+  document.getElementById('modal-title').textContent = `Watch ${ctx.origin} → ${ctx.destination}`;
   document.getElementById('modal-price').value = ctx.target_price_hint ? Math.floor(ctx.target_price_hint * 0.9) : '';
   document.getElementById('modal-label').value = `${ctx.origin} → ${ctx.destination} · ${ctx.date}`;
   document.getElementById('watch-modal').classList.remove('hidden');
 }
 function closeModal() {
   document.getElementById('watch-modal').classList.add('hidden');
-  pendingWatch=null;
+  pendingWatch = null;
 }
 async function confirmWatch() {
-  const price=parseFloat(document.getElementById('modal-price').value);
-  const label=document.getElementById('modal-label').value.trim();
-  if(!price||price<=0){alert('Enter a target price.');return;}
-  const payload={...pendingWatch, target_price:price, label};
+  const price = parseFloat(document.getElementById('modal-price').value);
+  const label = document.getElementById('modal-label').value.trim();
+  if (!price || price <= 0) { alert('Enter a target price.'); return; }
+  const payload = {...pendingWatch, target_price: price, label};
   delete payload.target_price_hint;
   try {
-    const res=await fetch('/api/watch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const data=await res.json();
-    if(data.error){alert(data.error);return;}
+    const res  = await fetch('/api/watch', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
     closeModal();
     loadWatches();
-    // briefly show the watch panel
     document.getElementById('watch-panel').classList.remove('hidden');
-  } catch(e){alert(e.message);}
+  } catch(e) { alert(e.message); }
 }
-
-// ── Watch panel ───────────────────────────────────────────────────────────────
 function toggleWatchPanel() {
   document.getElementById('watch-panel').classList.toggle('hidden');
+  // init date to 2 weeks out if empty
+  const wd = document.getElementById('w-date');
+  if (!wd.value) {
+    const t = new Date(); t.setDate(t.getDate()+14);
+    wd.value = t.toISOString().split('T')[0];
+  }
 }
 
+async function quickWatch() {
+  const origin = document.getElementById('w-origin').value.trim().toUpperCase();
+  const destination = document.getElementById('w-destination').value.trim().toUpperCase();
+  const date = document.getElementById('w-date').value;
+  const target = parseFloat(document.getElementById('w-target').value);
+  if (!origin || !destination || !date || !target) { alert('Fill in all fields.'); return; }
+  const payload = {
+    origin, destination, date, target_price: target,
+    trip_type: 'one_way', seat_type: 'economy', adults: 1, max_stops: 'any',
+    label: `${origin} → ${destination} · ${date}`,
+  };
+  try {
+    const res = await fetch('/api/watch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    document.getElementById('w-origin').value = '';
+    document.getElementById('w-destination').value = '';
+    document.getElementById('w-target').value = '';
+    loadWatches();
+  } catch(e) { alert(e.message); }
+}
 async function loadWatches() {
   try {
-    const res=await fetch('/api/watches');
-    const data=await res.json();
-    const watches=data.watches||[];
-    document.getElementById('watch-count').textContent=watches.length;
+    const res  = await fetch('/api/watches');
+    const data = await res.json();
+    const watches = data.watches || [];
+    document.getElementById('watch-count').textContent = watches.length;
     renderWatches(watches);
-  } catch(_){}
+  } catch(_) {}
 }
-
 function renderWatches(watches) {
-  const el=document.getElementById('watch-list');
-  if(!watches.length){
-    el.innerHTML=`<div class="text-xs py-4 text-center" style="color:#48484a">No watches yet.</div>`;
+  const el = document.getElementById('watch-list');
+  if (!watches.length) {
+    el.innerHTML = `<div class="text-sm py-6 text-center text-gray-400">No watches yet.</div>`;
     return;
   }
-  el.innerHTML=watches.map(w=>`
+  el.innerHTML = watches.map(w => `
     <div class="watch-row">
       <div>
-        <div class="text-sm font-medium">${w.label}</div>
-        <div class="text-xs mt-0.5" style="color:#636366">${w.date}${w.return_date?' → '+w.return_date:''} · target $${w.target_price}</div>
-        ${w.last_price!=null?`<div class="text-xs mt-0.5" style="color:#48484a">Last seen $${w.last_price.toFixed(0)} ${w.triggered?'· <span style="color:#fff">ALERTED</span>':''}</div>`:''}
+        <div class="text-sm font-medium text-gray-800">${w.label}</div>
+        <div class="text-xs mt-0.5 text-gray-500">${w.date}${w.return_date?' → '+w.return_date:''} · target $${w.target_price}</div>
+        ${w.last_price!=null ? `<div class="text-xs mt-0.5 text-gray-400">Last seen $${w.last_price.toFixed(0)}${w.triggered?' · <span class="text-blue-600 font-medium">ALERTED</span>':''}</div>` : ''}
       </div>
-      <button onclick="deleteWatch(${w.id})" class="text-xs px-3 py-1 rounded-full" style="background:#1c1c1e;color:#636366">Remove</button>
+      <button onclick="deleteWatch(${w.id})" class="text-xs px-3 py-1 rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50">Remove</button>
     </div>`).join('');
 }
-
 async function deleteWatch(id) {
-  await fetch(`/api/watch/${id}`,{method:'DELETE'});
+  await fetch(`/api/watch/${id}`, {method:'DELETE'});
   loadWatches();
 }
 
-document.addEventListener('keydown',e=>{
-  if(e.key==='Escape') closeModal();
-  if(e.key!=='Enter') return;
-  if(!document.getElementById('tab-flights').classList.contains('hidden')) searchFlights();
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeCal(); }
+  if (e.key !== 'Enter') return;
+  if (!document.getElementById('tab-flights').classList.contains('hidden')) searchFlights();
   else searchDates();
 });
-document.getElementById('watch-modal').addEventListener('click',e=>{
-  if(e.target===document.getElementById('watch-modal')) closeModal();
+document.getElementById('watch-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('watch-modal')) closeModal();
 });
 </script>
 </body>
