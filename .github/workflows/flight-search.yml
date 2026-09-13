@@ -1,0 +1,136 @@
+name: Flight Search
+
+# Runs a cheapest-date search on a GitHub-hosted runner, which has unrestricted
+# outbound network access to the Google Flights endpoints the library calls.
+# Results are written to the job summary and uploaded as JSON artifacts.
+
+on:
+  workflow_dispatch:
+    inputs:
+      origin:
+        description: "Origin airport IATA code"
+        required: true
+        default: "PHX"
+      destination:
+        description: "Destination airport IATA code"
+        required: true
+        default: "JAX"
+      from_date:
+        description: "Earliest departure date (YYYY-MM-DD)"
+        required: true
+        default: "2026-11-05"
+      to_date:
+        description: "Latest departure date (YYYY-MM-DD)"
+        required: true
+        default: "2027-01-31"
+      cabin_class:
+        description: "Cabin class"
+        required: false
+        default: "ECONOMY"
+        type: choice
+        options:
+          - ECONOMY
+          - PREMIUM_ECONOMY
+          - BUSINESS
+          - FIRST
+      max_stops:
+        description: "Maximum stops"
+        required: false
+        default: "ANY"
+        type: choice
+        options:
+          - ANY
+          - NON_STOP
+          - ONE_STOP
+          - TWO_PLUS_STOPS
+      top_n:
+        description: "How many of the cheapest dates to report"
+        required: false
+        default: "15"
+  push:
+    branches: [ "claude/flight-search-phx-jax-0zr6nv" ]
+    paths: [ ".github/workflows/flight-search.yml" ]
+
+permissions:
+  contents: read
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+
+    # Inputs are passed through the environment rather than interpolated into
+    # run blocks, so a crafted input value cannot reach the shell.
+    env:
+      ORIGIN: ${{ github.event.inputs.origin || 'PHX' }}
+      DESTINATION: ${{ github.event.inputs.destination || 'JAX' }}
+      FROM_DATE: ${{ github.event.inputs.from_date || '2026-11-05' }}
+      TO_DATE: ${{ github.event.inputs.to_date || '2027-01-31' }}
+      CABIN_CLASS: ${{ github.event.inputs.cabin_class || 'ECONOMY' }}
+      MAX_STOPS: ${{ github.event.inputs.max_stops || 'ANY' }}
+      TOP_N: ${{ github.event.inputs.top_n || '15' }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Search cheapest dates
+        run: |
+          uv run fli dates "$ORIGIN" "$DESTINATION" \
+            --from "$FROM_DATE" \
+            --to "$TO_DATE" \
+            --class "$CABIN_CLASS" \
+            --stops "$MAX_STOPS" \
+            --sort \
+            --format json > dates.json
+
+      - name: Pick the cheapest date
+        id: cheapest
+        run: |
+          uv run python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+
+          payload = json.loads(open("dates.json").read())
+          dates = payload.get("dates") or []
+          if dates:
+              cheapest = min(dates, key=lambda d: d["price"])
+              print(f"date={cheapest['departure_date']}")
+              print(f"price={cheapest['price']:.0f}")
+              print(f"currency={cheapest['currency']}")
+          else:
+              print("date=")
+          PY
+
+      - name: Search flights on the cheapest date
+        if: steps.cheapest.outputs.date != ''
+        env:
+          CHEAPEST_DATE: ${{ steps.cheapest.outputs.date }}
+        run: |
+          uv run fli flights "$ORIGIN" "$DESTINATION" "$CHEAPEST_DATE" \
+            --class "$CABIN_CLASS" \
+            --stops "$MAX_STOPS" \
+            --sort CHEAPEST \
+            --format json > flights.json
+
+      - name: Write job summary
+        if: always()
+        run: uv run python scripts/render_search_summary.py
+
+      - name: Upload raw results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: flight-search-results
+          path: |
+            dates.json
+            flights.json
+          if-no-files-found: warn
