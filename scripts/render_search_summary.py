@@ -8,6 +8,7 @@ run still produces a readable summary.
 
 import json
 import os
+import statistics
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -40,6 +41,40 @@ def format_date(value: str) -> str:
     except ValueError:
         return value
     return parsed.strftime("%a %b %d, %Y")
+
+
+def render_price_spread(dates: list[dict[str, Any]]) -> list[str]:
+    """Summarise the price range across the window and list the priciest dates."""
+    prices = [entry["price"] for entry in dates]
+    currency = dates[0]["currency"]
+    ranked = sorted(dates, key=lambda d: d["price"], reverse=True)
+
+    lines = ["## Price spread", ""]
+    lines.append("| Measure | Price |")
+    lines.append("| --- | --- |")
+    lines.append(f"| Cheapest | {format_money(min(prices), currency)} |")
+    lines.append(f"| Median | {format_money(statistics.median(prices), currency)} |")
+    lines.append(f"| Most expensive | {format_money(max(prices), currency)} |")
+    lines.append("")
+
+    cheapest_count = sum(1 for price in prices if price == min(prices))
+    lines.append(
+        f"The floor fare of {format_money(min(prices), currency)} is available on "
+        f"{cheapest_count} of {len(dates)} dates in this window."
+    )
+    lines.append("")
+
+    lines.append("### Most expensive dates to avoid")
+    lines.append("")
+    lines.append("| Departure | Price |")
+    lines.append("| --- | --- |")
+    for entry in ranked[:8]:
+        lines.append(
+            f"| {format_date(entry['departure_date'])} "
+            f"| {format_money(entry['price'], entry['currency'])} |"
+        )
+    lines.append("")
+    return lines
 
 
 def render_cheapest_dates(dates: list[dict[str, Any]], top_n: int) -> list[str]:
@@ -159,6 +194,7 @@ def main() -> None:
             )
             lines.append("")
             lines.extend(render_cheapest_dates(dates, top_n))
+            lines.extend(render_price_spread(dates))
 
             flights_payload = load_payload(FLIGHTS_FILE)
             if flights_payload and flights_payload.get("success", False):

@@ -49,7 +49,9 @@ on:
         default: "15"
   push:
     branches: [ "claude/flight-search-phx-jax-0zr6nv" ]
-    paths: [ ".github/workflows/flight-search.yml" ]
+    paths:
+      - ".github/workflows/flight-search.yml"
+      - "scripts/render_search_summary.py"
 
 permissions:
   contents: read
