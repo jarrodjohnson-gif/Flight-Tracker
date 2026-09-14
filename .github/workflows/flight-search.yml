@@ -15,6 +15,10 @@ on:
         description: "Destination airport IATA code"
         required: true
         default: "JAX"
+      compare_destination:
+        description: "Optional second destination to price alongside (blank to skip)"
+        required: false
+        default: "MCO"
       from_date:
         description: "Earliest departure date (YYYY-MM-DD)"
         required: true
@@ -65,6 +69,7 @@ jobs:
     env:
       ORIGIN: ${{ github.event.inputs.origin || 'PHX' }}
       DESTINATION: ${{ github.event.inputs.destination || 'JAX' }}
+      COMPARE_DESTINATION: ${{ github.event.inputs.compare_destination || 'MCO' }}
       FROM_DATE: ${{ github.event.inputs.from_date || '2026-11-05' }}
       TO_DATE: ${{ github.event.inputs.to_date || '2027-01-31' }}
       CABIN_CLASS: ${{ github.event.inputs.cabin_class || 'ECONOMY' }}
@@ -169,6 +174,48 @@ jobs:
             --sort CHEAPEST \
             --format json > flights-nonstop.json
 
+      - name: Search alternate destination
+        if: env.COMPARE_DESTINATION != '' && env.COMPARE_DESTINATION != env.DESTINATION
+        continue-on-error: true
+        run: |
+          uv run fli dates "$ORIGIN" "$COMPARE_DESTINATION" \
+            --from "$FROM_DATE" \
+            --to "$TO_DATE" \
+            --class "$CABIN_CLASS" \
+            --stops "$MAX_STOPS" \
+            --sort \
+            --format json > dates-compare.json
+
+      - name: Pick the cheapest alternate date
+        id: cheapest_compare
+        continue-on-error: true
+        run: |
+          uv run python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os.path
+
+          path = "dates-compare.json"
+          dates = []
+          if os.path.exists(path) and os.path.getsize(path):
+              try:
+                  dates = (json.loads(open(path).read()).get("dates")) or []
+              except json.JSONDecodeError:
+                  dates = []
+          print(f"date={min(dates, key=lambda d: d['price'])['departure_date']}" if dates else "date=")
+          PY
+
+      - name: Search alternate destination flights
+        if: steps.cheapest_compare.outputs.date != ''
+        continue-on-error: true
+        env:
+          COMPARE_DATE: ${{ steps.cheapest_compare.outputs.date }}
+        run: |
+          uv run fli flights "$ORIGIN" "$COMPARE_DESTINATION" "$COMPARE_DATE" \
+            --class "$CABIN_CLASS" \
+            --stops "$MAX_STOPS" \
+            --sort CHEAPEST \
+            --format json > flights-compare.json
+
       - name: Write job summary
         if: always()
         run: uv run python scripts/render_search_summary.py
@@ -183,4 +230,6 @@ jobs:
             flights.json
             dates-nonstop.json
             flights-nonstop.json
+            dates-compare.json
+            flights-compare.json
           if-no-files-found: warn
