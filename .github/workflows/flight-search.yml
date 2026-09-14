@@ -47,6 +47,12 @@ on:
           - NON_STOP
           - ONE_STOP
           - TWO_PLUS_STOPS
+      days:
+        description: >-
+          Comma-separated departure days to include (e.g. friday,saturday).
+          Blank includes every day.
+        required: false
+        default: "friday,saturday,sunday,monday"
       top_n:
         description: "How many of the cheapest dates to report"
         required: false
@@ -74,6 +80,7 @@ jobs:
       TO_DATE: ${{ github.event.inputs.to_date || '2027-01-31' }}
       CABIN_CLASS: ${{ github.event.inputs.cabin_class || 'ECONOMY' }}
       MAX_STOPS: ${{ github.event.inputs.max_stops || 'ANY' }}
+      DAYS: ${{ github.event.inputs.days || 'friday,saturday,sunday,monday' }}
       TOP_N: ${{ github.event.inputs.top_n || '15' }}
 
     steps:
@@ -90,6 +97,24 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Build day-of-week filter
+        id: dayfilter
+        run: |
+          uv run python - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+
+          valid = {
+              "monday", "tuesday", "wednesday", "thursday",
+              "friday", "saturday", "sunday",
+          }
+          raw = os.environ.get("DAYS", "")
+          chosen = [d.strip().lower() for d in raw.split(",") if d.strip()]
+          unknown = [d for d in chosen if d not in valid]
+          if unknown:
+              raise SystemExit(f"Unknown day(s) in DAYS: {', '.join(unknown)}")
+          print("flags=" + " ".join(f"--{d}" for d in chosen))
+          PY
+
       - name: Search cheapest dates
         run: |
           uv run fli dates "$ORIGIN" "$DESTINATION" \
@@ -98,6 +123,7 @@ jobs:
             --class "$CABIN_CLASS" \
             --stops "$MAX_STOPS" \
             --sort \
+            ${{ steps.dayfilter.outputs.flags }} \
             --format json > dates.json
 
       - name: Search cheapest nonstop dates
@@ -109,6 +135,7 @@ jobs:
             --class "$CABIN_CLASS" \
             --stops NON_STOP \
             --sort \
+            ${{ steps.dayfilter.outputs.flags }} \
             --format json > dates-nonstop.json
 
       - name: Pick the cheapest date
@@ -184,6 +211,7 @@ jobs:
             --class "$CABIN_CLASS" \
             --stops "$MAX_STOPS" \
             --sort \
+            ${{ steps.dayfilter.outputs.flags }} \
             --format json > dates-compare.json
 
       - name: Pick the cheapest alternate date
