@@ -52,7 +52,13 @@ on:
           Comma-separated departure days to include (e.g. friday,saturday).
           Blank includes every day.
         required: false
-        default: "friday,saturday,sunday,monday"
+        default: "thursday,friday,saturday,sunday,monday"
+      departure_window:
+        description: >-
+          Optional departure time window in 24h form, e.g. 18-23 for evening
+          departures only. Blank includes every departure time.
+        required: false
+        default: ""
       top_n:
         description: "How many of the cheapest dates to report"
         required: false
@@ -80,7 +86,8 @@ jobs:
       TO_DATE: ${{ github.event.inputs.to_date || '2027-01-31' }}
       CABIN_CLASS: ${{ github.event.inputs.cabin_class || 'ECONOMY' }}
       MAX_STOPS: ${{ github.event.inputs.max_stops || 'ANY' }}
-      DAYS: ${{ github.event.inputs.days || 'friday,saturday,sunday,monday' }}
+      DAYS: ${{ github.event.inputs.days || 'thursday,friday,saturday,sunday,monday' }}
+      DEPARTURE_WINDOW: ${{ github.event.inputs.departure_window || '' }}
       TOP_N: ${{ github.event.inputs.top_n || '15' }}
 
     steps:
@@ -112,7 +119,11 @@ jobs:
           unknown = [d for d in chosen if d not in valid]
           if unknown:
               raise SystemExit(f"Unknown day(s) in DAYS: {', '.join(unknown)}")
-          print("flags=" + " ".join(f"--{d}" for d in chosen))
+          flags = [f"--{d}" for d in chosen]
+          window = os.environ.get("DEPARTURE_WINDOW", "").strip()
+          if window:
+              flags += ["--time", window]
+          print("flags=" + " ".join(flags))
           PY
 
       - name: Search cheapest dates

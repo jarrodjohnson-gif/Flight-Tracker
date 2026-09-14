@@ -47,6 +47,46 @@ def format_date(value: str) -> str:
     return parsed.strftime("%a %b %d, %Y")
 
 
+def render_by_weekday(dates: list[dict[str, Any]]) -> list[str]:
+    """Break the cheapest fare down by day of the week."""
+    order = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
+    by_day: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for entry in dates:
+        try:
+            weekday = datetime.strptime(entry["departure_date"], "%Y-%m-%d").strftime("%A")
+        except (KeyError, ValueError):
+            continue
+        by_day[weekday].append(entry)
+
+    if not by_day:
+        return []
+
+    overall = min(entry["price"] for entry in dates)
+    lines = ["## Cheapest by day of week", ""]
+    lines.append("| Day | Best price | On | Dates priced |")
+    lines.append("| --- | --- | --- | --- |")
+    for day in order:
+        entries = by_day.get(day)
+        if not entries:
+            continue
+        best = min(entries, key=lambda d: d["price"])
+        marker = " ✅" if best["price"] == overall else ""
+        lines.append(
+            f"| {day}{marker} | {format_money(best['price'], best['currency'])} "
+            f"| {format_date(best['departure_date'])} | {len(entries)} |"
+        )
+    lines.append("")
+    return lines
+
+
 def render_price_spread(dates: list[dict[str, Any]]) -> list[str]:
     """Summarise the price range across the window and list the priciest dates."""
     prices = [entry["price"] for entry in dates]
@@ -307,6 +347,7 @@ def main() -> None:
             )
             lines.append("")
             lines.extend(render_cheapest_dates(dates, top_n))
+            lines.extend(render_by_weekday(dates))
             lines.extend(render_price_spread(dates))
 
             flights_payload = load_payload(FLIGHTS_FILE)
