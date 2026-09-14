@@ -53,6 +53,12 @@ on:
           Blank includes every day.
         required: false
         default: "thursday,friday,saturday,sunday,monday"
+      trip_duration:
+        description: >-
+          Nights away, to also price the trip as a round trip (e.g. 7).
+          Set to 0 to price one-way only.
+        required: false
+        default: "7"
       departure_window:
         description: >-
           Optional departure time window in 24h form, e.g. 18-23 for evening
@@ -87,6 +93,7 @@ jobs:
       CABIN_CLASS: ${{ github.event.inputs.cabin_class || 'ECONOMY' }}
       MAX_STOPS: ${{ github.event.inputs.max_stops || 'ANY' }}
       DAYS: ${{ github.event.inputs.days || 'thursday,friday,saturday,sunday,monday' }}
+      TRIP_DURATION: ${{ github.event.inputs.trip_duration || '7' }}
       DEPARTURE_WINDOW: ${{ github.event.inputs.departure_window || '' }}
       TOP_N: ${{ github.event.inputs.top_n || '15' }}
 
@@ -136,6 +143,21 @@ jobs:
             --sort \
             ${{ steps.dayfilter.outputs.flags }} \
             --format json > dates.json
+
+      - name: Search round trip
+        if: env.TRIP_DURATION != '' && env.TRIP_DURATION != '0'
+        continue-on-error: true
+        run: |
+          uv run fli dates "$ORIGIN" "$DESTINATION" \
+            --from "$FROM_DATE" \
+            --to "$TO_DATE" \
+            --class "$CABIN_CLASS" \
+            --stops "$MAX_STOPS" \
+            --round \
+            --duration "$TRIP_DURATION" \
+            --sort \
+            ${{ steps.dayfilter.outputs.flags }} \
+            --format json > dates-roundtrip.json
 
       - name: Search cheapest nonstop dates
         continue-on-error: true
@@ -271,4 +293,5 @@ jobs:
             flights-nonstop.json
             dates-compare.json
             flights-compare.json
+            dates-roundtrip.json
           if-no-files-found: warn

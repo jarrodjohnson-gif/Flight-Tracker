@@ -20,6 +20,7 @@ NONSTOP_DATES_FILE = Path("dates-nonstop.json")
 NONSTOP_FLIGHTS_FILE = Path("flights-nonstop.json")
 COMPARE_DATES_FILE = Path("dates-compare.json")
 COMPARE_FLIGHTS_FILE = Path("flights-compare.json")
+ROUNDTRIP_DATES_FILE = Path("dates-roundtrip.json")
 
 
 def load_payload(path: Path) -> dict[str, Any] | None:
@@ -259,6 +260,51 @@ def render_nonstop(connecting_floor: float, currency: str) -> list[str]:
     return lines
 
 
+def render_roundtrip(one_way_floor: float, currency: str) -> list[str]:
+    """Compare round-trip pricing against twice the one-way fare."""
+    duration = os.environ.get("TRIP_DURATION", "").strip()
+    if not duration or duration == "0":
+        return []
+
+    lines = [f"## Round trip ({duration} nights)", ""]
+
+    payload = load_payload(ROUNDTRIP_DATES_FILE)
+    dates = payload.get("dates") or [] if payload and payload.get("success") else []
+    if not dates:
+        lines.append(
+            "No round-trip pricing came back for this window. The fares above are one-way only."
+        )
+        lines.append("")
+        return lines
+
+    cheapest = min(dates, key=lambda d: d["price"])
+    two_singles = one_way_floor * 2
+    delta = cheapest["price"] - two_singles
+
+    lines.append("| Measure | Price |")
+    lines.append("| --- | --- |")
+    lines.append(f"| Cheapest round trip | {format_money(cheapest['price'], currency)} |")
+    lines.append(f"| Two one-ways at the floor | {format_money(two_singles, currency)} |")
+    if delta < 0:
+        verdict = f"round trip saves {format_money(abs(delta), currency)}"
+    elif delta > 0:
+        verdict = f"round trip costs {format_money(delta, currency)} more"
+    else:
+        verdict = "identical either way"
+    lines.append(f"| Difference | {verdict} |")
+    lines.append("")
+
+    out = format_date(cheapest["departure_date"])
+    back = cheapest.get("return_date")
+    when = f"{out} returning {format_date(back)}" if back else out
+    lines.append(
+        f"Cheapest round trip is {format_money(cheapest['price'], currency)} "
+        f"departing {when}, across {len(dates)} priced pairs."
+    )
+    lines.append("")
+    return lines
+
+
 def render_compare(baseline_floor: float, currency: str) -> list[str]:
     """Compare a second destination against the primary one."""
     compare_code = os.environ.get("COMPARE_DESTINATION", "").strip()
@@ -354,6 +400,7 @@ def main() -> None:
             if flights_payload and flights_payload.get("success", False):
                 lines.extend(render_flights(flights_payload, cheapest["departure_date"]))
 
+            lines.extend(render_roundtrip(cheapest["price"], cheapest["currency"]))
             lines.extend(render_nonstop(cheapest["price"], cheapest["currency"]))
             lines.extend(render_compare(cheapest["price"], cheapest["currency"]))
 
