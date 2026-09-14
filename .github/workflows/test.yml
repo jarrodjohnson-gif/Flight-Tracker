@@ -124,6 +124,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always() && needs.test.result != 'skipped'
     permissions:
+      contents: read
       checks: write
       pull-requests: write
     
