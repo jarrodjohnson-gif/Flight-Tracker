@@ -16,6 +16,8 @@ from typing import Any
 
 DATES_FILE = Path("dates.json")
 FLIGHTS_FILE = Path("flights.json")
+NONSTOP_DATES_FILE = Path("dates-nonstop.json")
+NONSTOP_FLIGHTS_FILE = Path("flights-nonstop.json")
 
 
 def load_payload(path: Path) -> dict[str, Any] | None:
@@ -119,10 +121,12 @@ def format_time(value: str) -> str:
         return value
 
 
-def render_flights(payload: dict[str, Any], cheapest_date: str) -> list[str]:
-    """Build the table of individual flights on the cheapest date."""
+def render_flights(
+    payload: dict[str, Any], cheapest_date: str, heading: str = "Flights on"
+) -> list[str]:
+    """Build the table of individual flights on the given date."""
     flights = payload.get("flights") or []
-    lines = [f"## Flights on {format_date(cheapest_date)}", ""]
+    lines = [f"## {heading} {format_date(cheapest_date)}", ""]
     if not flights:
         lines.append("No individual flights returned for this date.")
         lines.append("")
@@ -151,6 +155,47 @@ def render_flights(payload: dict[str, Any], cheapest_date: str) -> list[str]:
             f"| {departs} | {arrives} | {route} |"
         )
     lines.append("")
+    return lines
+
+
+def render_nonstop(connecting_floor: float, currency: str) -> list[str]:
+    """Compare nonstop pricing against the cheapest connecting fare."""
+    lines = ["## Nonstop", ""]
+
+    payload = load_payload(NONSTOP_DATES_FILE)
+    dates = payload.get("dates") or [] if payload and payload.get("success") else []
+    if not dates:
+        lines.append(
+            "Google Flights returned no nonstop service on this route in this window, "
+            "so every option is a connecting itinerary."
+        )
+        lines.append("")
+        return lines
+
+    cheapest = min(dates, key=lambda d: d["price"])
+    premium = cheapest["price"] - connecting_floor
+    floor_count = sum(1 for d in dates if d["price"] == cheapest["price"])
+
+    lines.append("| Measure | Price |")
+    lines.append("| --- | --- |")
+    lines.append(f"| Cheapest connecting | {format_money(connecting_floor, currency)} |")
+    lines.append(f"| Cheapest nonstop | {format_money(cheapest['price'], currency)} |")
+    lines.append(f"| Nonstop premium | {format_money(premium, currency)} |")
+    lines.append("")
+    lines.append(
+        f"Cheapest nonstop is {format_money(cheapest['price'], currency)} on "
+        f"{format_date(cheapest['departure_date'])}, available at that price on "
+        f"{floor_count} of {len(dates)} nonstop dates."
+    )
+    lines.append("")
+
+    flights_payload = load_payload(NONSTOP_FLIGHTS_FILE)
+    if flights_payload and flights_payload.get("success"):
+        lines.extend(
+            render_flights(
+                flights_payload, cheapest["departure_date"], heading="Nonstop flights on"
+            )
+        )
     return lines
 
 
@@ -199,6 +244,8 @@ def main() -> None:
             flights_payload = load_payload(FLIGHTS_FILE)
             if flights_payload and flights_payload.get("success", False):
                 lines.extend(render_flights(flights_payload, cheapest["departure_date"]))
+
+            lines.extend(render_nonstop(cheapest["price"], cheapest["currency"]))
 
     report = "\n".join(lines)
     print(report)
