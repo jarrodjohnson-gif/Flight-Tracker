@@ -18,6 +18,8 @@ DATES_FILE = Path("dates.json")
 FLIGHTS_FILE = Path("flights.json")
 NONSTOP_DATES_FILE = Path("dates-nonstop.json")
 NONSTOP_FLIGHTS_FILE = Path("flights-nonstop.json")
+COMPARE_DATES_FILE = Path("dates-compare.json")
+COMPARE_FLIGHTS_FILE = Path("flights-compare.json")
 
 
 def load_payload(path: Path) -> dict[str, Any] | None:
@@ -199,6 +201,54 @@ def render_nonstop(connecting_floor: float, currency: str) -> list[str]:
     return lines
 
 
+def render_compare(baseline_floor: float, currency: str) -> list[str]:
+    """Compare a second destination against the primary one."""
+    compare_code = os.environ.get("COMPARE_DESTINATION", "").strip()
+    destination = os.environ.get("DESTINATION", "").strip()
+    if not compare_code or compare_code == destination:
+        return []
+
+    lines = [f"## Alternate destination: {compare_code}", ""]
+
+    payload = load_payload(COMPARE_DATES_FILE)
+    dates = payload.get("dates") or [] if payload and payload.get("success") else []
+    if not dates:
+        lines.append(f"No priced dates came back for {compare_code} in this window.")
+        lines.append("")
+        return lines
+
+    cheapest = min(dates, key=lambda d: d["price"])
+    delta = cheapest["price"] - baseline_floor
+    if delta < 0:
+        verdict = f"{compare_code} is {format_money(abs(delta), currency)} cheaper"
+    elif delta > 0:
+        verdict = f"{compare_code} is {format_money(delta, currency)} more expensive"
+    else:
+        verdict = f"{compare_code} costs the same"
+
+    lines.append("| Destination | Cheapest fare | On |")
+    lines.append("| --- | --- | --- |")
+    lines.append(f"| {destination} | {format_money(baseline_floor, currency)} | (baseline) |")
+    lines.append(
+        f"| {compare_code} | {format_money(cheapest['price'], currency)} "
+        f"| {format_date(cheapest['departure_date'])} |"
+    )
+    lines.append("")
+    lines.append(f"**{verdict}** at its cheapest across {len(dates)} priced dates.")
+    lines.append("")
+
+    flights_payload = load_payload(COMPARE_FLIGHTS_FILE)
+    if flights_payload and flights_payload.get("success"):
+        lines.extend(
+            render_flights(
+                flights_payload,
+                cheapest["departure_date"],
+                heading=f"Cheapest {compare_code} flights on",
+            )
+        )
+    return lines
+
+
 def main() -> None:
     """Write the Markdown report to the job summary and stdout."""
     origin = os.environ.get("ORIGIN", "?")
@@ -246,6 +296,7 @@ def main() -> None:
                 lines.extend(render_flights(flights_payload, cheapest["departure_date"]))
 
             lines.extend(render_nonstop(cheapest["price"], cheapest["currency"]))
+            lines.extend(render_compare(cheapest["price"], cheapest["currency"]))
 
     report = "\n".join(lines)
     print(report)
