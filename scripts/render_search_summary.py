@@ -123,6 +123,24 @@ def format_time(value: str) -> str:
         return value
 
 
+def describe_layovers(legs: list[dict[str, Any]]) -> str:
+    """Describe each connection as its airport and ground time."""
+    if len(legs) < 2:
+        return "nonstop"
+    parts = []
+    for prev, nxt in zip(legs, legs[1:], strict=False):
+        airport = prev.get("arrival_airport", {}).get("code", "?")
+        try:
+            arrive = datetime.fromisoformat(prev["arrival_time"])
+            depart = datetime.fromisoformat(nxt["departure_time"])
+        except (KeyError, ValueError):
+            parts.append(f"{airport} ?")
+            continue
+        minutes = int((depart - arrive).total_seconds() // 60)
+        parts.append(f"{airport} {minutes // 60}h {minutes % 60:02d}m")
+    return ", ".join(parts)
+
+
 def render_flights(
     payload: dict[str, Any], cheapest_date: str, heading: str = "Flights on"
 ) -> list[str]:
@@ -134,8 +152,8 @@ def render_flights(
         lines.append("")
         return lines
 
-    lines.append("| Price | Duration | Stops | Airline | Depart | Arrive | Route |")
-    lines.append("| --- | --- | --- | --- | --- | --- | --- |")
+    lines.append("| Price | Duration | Stops | Airline | Depart | Arrive | Route | Connection |")
+    lines.append("| --- | --- | --- | --- | --- | --- | --- | --- |")
     for flight in flights[:10]:
         legs = flight.get("legs") or []
         codes = [leg.get("airline", {}).get("code", "?") for leg in legs]
@@ -154,7 +172,7 @@ def render_flights(
         stops = flight.get("stops", max(len(legs) - 1, 0))
         lines.append(
             f"| {price} | {duration_text} | {stops} | {airlines} "
-            f"| {departs} | {arrives} | {route} |"
+            f"| {departs} | {arrives} | {route} | {describe_layovers(legs)} |"
         )
     lines.append("")
     return lines
