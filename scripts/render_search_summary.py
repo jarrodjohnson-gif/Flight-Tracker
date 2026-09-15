@@ -9,6 +9,7 @@ run still produces a readable summary.
 import json
 import os
 import statistics
+import sys
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -457,6 +458,39 @@ def render_compare(baseline_floor: float, currency: str) -> list[str]:
     return lines
 
 
+def print_digest() -> None:
+    """Print a compact, log-friendly digest of the ranked trips."""
+    name = os.environ.get("SEARCH_NAME", "").strip()
+    origin = os.environ.get("ORIGIN", "?")
+    destination = os.environ.get("DESTINATION", "?")
+    duration = os.environ.get("TRIP_DURATION", "").strip()
+    print(f"DIGEST {name or origin + '-' + destination} [{origin}->{destination}]")
+
+    one_way = cheapest_entry(DATES_FILE)
+    if one_way:
+        currency = one_way["currency"]
+        print(f"DIGEST one-way floor {format_money(one_way['price'], currency)}")
+    nonstop = cheapest_entry(NONSTOP_DATES_FILE)
+    if nonstop:
+        print(f"DIGEST nonstop floor {format_money(nonstop['price'], nonstop['currency'])}")
+
+    payload = load_payload(ROUNDTRIP_DATES_FILE)
+    dates = payload.get("dates") or [] if payload and payload.get("success") else []
+    if not dates:
+        print("DIGEST no round-trip pricing")
+        return
+    try:
+        top_n = int(os.environ.get("TOP_N", "15"))
+    except ValueError:
+        top_n = 15
+    ranked = sorted(dates, key=lambda d: d["price"])[:top_n]
+    print(f"DIGEST round trips ({duration} nights), cheapest first:")
+    for rank, entry in enumerate(ranked, start=1):
+        ret = entry.get("return_date") or "?"
+        price = format_money(entry["price"], entry["currency"])
+        print(f"DIGEST {rank:>2}. {entry['departure_date']} -> {ret}  {price}")
+
+
 def main() -> None:
     """Write the Markdown report to the job summary and stdout."""
     origin = os.environ.get("ORIGIN", "?")
@@ -529,4 +563,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    if "--digest" in sys.argv:
+        print_digest()
+    else:
+        main()
