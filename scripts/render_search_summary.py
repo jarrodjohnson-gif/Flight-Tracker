@@ -21,6 +21,9 @@ NONSTOP_FLIGHTS_FILE = Path("flights-nonstop.json")
 COMPARE_DATES_FILE = Path("dates-compare.json")
 COMPARE_FLIGHTS_FILE = Path("flights-compare.json")
 ROUNDTRIP_DATES_FILE = Path("dates-roundtrip.json")
+RETURN_DATES_FILE = Path("dates-return.json")
+RETURN_NONSTOP_FILE = Path("dates-return-nonstop.json")
+RETURN_NONSTOP_FLIGHTS_FILE = Path("flights-return-nonstop.json")
 
 
 def load_payload(path: Path) -> dict[str, Any] | None:
@@ -305,6 +308,85 @@ def render_roundtrip(one_way_floor: float, currency: str) -> list[str]:
     return lines
 
 
+def cheapest_entry(path: Path) -> dict[str, Any] | None:
+    """Return the cheapest priced date in a payload, or None."""
+    payload = load_payload(path)
+    if not payload or not payload.get("success"):
+        return None
+    dates = payload.get("dates") or []
+    return min(dates, key=lambda d: d["price"]) if dates else None
+
+
+def render_return_leg(
+    outbound_floor: float, outbound_nonstop: float | None, currency: str
+) -> list[str]:
+    """Price the return direction separately and cost each mix of the two legs."""
+    if os.environ.get("RETURN_LEG", "").strip().lower() != "true":
+        return []
+
+    origin = os.environ.get("ORIGIN", "?")
+    destination = os.environ.get("DESTINATION", "?")
+    lines = [f"## Return leg ({destination} to {origin})", ""]
+
+    back = cheapest_entry(RETURN_DATES_FILE)
+    if not back:
+        lines.append("No return-direction pricing came back for this window.")
+        lines.append("")
+        return lines
+
+    back_nonstop = cheapest_entry(RETURN_NONSTOP_FILE)
+
+    lines.append("| Leg | Cheapest | Nonstop | Nonstop premium |")
+    lines.append("| --- | --- | --- | --- |")
+    out_ns = format_money(outbound_nonstop, currency) if outbound_nonstop else "none"
+    out_prem = (
+        format_money(outbound_nonstop - outbound_floor, currency) if outbound_nonstop else "—"
+    )
+    lines.append(
+        f"| {origin} to {destination} | {format_money(outbound_floor, currency)} "
+        f"| {out_ns} | {out_prem} |"
+    )
+    back_ns = format_money(back_nonstop["price"], currency) if back_nonstop else "none"
+    back_prem = (
+        format_money(back_nonstop["price"] - back["price"], currency) if back_nonstop else "—"
+    )
+    lines.append(
+        f"| {destination} to {origin} | {format_money(back['price'], currency)} "
+        f"| {back_ns} | {back_prem} |"
+    )
+    lines.append("")
+
+    both = outbound_floor + back["price"]
+    combos = [("Both legs connecting", both)]
+    if outbound_nonstop:
+        combos.append(("Nonstop out, connecting back", outbound_nonstop + back["price"]))
+    if back_nonstop:
+        combos.append(("Connecting out, nonstop back", outbound_floor + back_nonstop["price"]))
+    if outbound_nonstop and back_nonstop:
+        combos.append(("Nonstop both ways", outbound_nonstop + back_nonstop["price"]))
+
+    lines.append("### Buying the two legs separately")
+    lines.append("")
+    lines.append("| Combination | Total | Over cheapest |")
+    lines.append("| --- | --- | --- |")
+    for label, total in sorted(combos, key=lambda c: c[1]):
+        extra = total - both
+        over = "—" if extra == 0 else f"+{format_money(extra, currency)}"
+        lines.append(f"| {label} | {format_money(total, currency)} | {over} |")
+    lines.append("")
+
+    flights = load_payload(RETURN_NONSTOP_FLIGHTS_FILE)
+    if back_nonstop and flights and flights.get("success"):
+        lines.extend(
+            render_flights(
+                flights,
+                back_nonstop["departure_date"],
+                heading=f"Nonstop {destination} to {origin} on",
+            )
+        )
+    return lines
+
+
 def render_compare(baseline_floor: float, currency: str) -> list[str]:
     """Compare a second destination against the primary one."""
     compare_code = os.environ.get("COMPARE_DESTINATION", "").strip()
@@ -402,6 +484,15 @@ def main() -> None:
 
             lines.extend(render_roundtrip(cheapest["price"], cheapest["currency"]))
             lines.extend(render_nonstop(cheapest["price"], cheapest["currency"]))
+
+            out_ns = cheapest_entry(NONSTOP_DATES_FILE)
+            lines.extend(
+                render_return_leg(
+                    cheapest["price"],
+                    out_ns["price"] if out_ns else None,
+                    cheapest["currency"],
+                )
+            )
             lines.extend(render_compare(cheapest["price"], cheapest["currency"]))
 
     report = "\n".join(lines)
