@@ -1,6 +1,6 @@
 [
   {
-    "name": "Jacksonville long weekend",
+    "name": "Florida - Fri to Mon (3 nights)",
     "origin": "PHX",
     "destination": "JAX",
     "compare_destination": "",
@@ -8,25 +8,55 @@
     "to_date": "2027-01-31",
     "cabin_class": "ECONOMY",
     "max_stops": "ANY",
-    "days": "thursday,friday,saturday,sunday,monday",
+    "days": "friday",
     "departure_window": "",
     "trip_duration": "3",
-    "return_leg": "true",
-    "top_n": "10"
+    "return_leg": "false",
+    "top_n": "20"
   },
   {
-    "name": "Hawaii - Honolulu vs Maui",
+    "name": "Florida - Thu to Mon (4 nights)",
+    "origin": "PHX",
+    "destination": "JAX",
+    "compare_destination": "",
+    "from_date": "2026-11-05",
+    "to_date": "2027-01-31",
+    "cabin_class": "ECONOMY",
+    "max_stops": "ANY",
+    "days": "thursday",
+    "departure_window": "",
+    "trip_duration": "4",
+    "return_leg": "false",
+    "top_n": "20"
+  },
+  {
+    "name": "Hawaii - Wed to Sun (4 nights)",
     "origin": "PHX",
     "destination": "HNL",
-    "compare_destination": "OGG",
+    "compare_destination": "",
     "from_date": "2027-01-01",
     "to_date": "2027-04-30",
     "cabin_class": "ECONOMY",
     "max_stops": "ANY",
-    "days": "",
+    "days": "wednesday",
     "departure_window": "",
-    "trip_duration": "7",
-    "return_leg": "true",
-    "top_n": "10"
+    "trip_duration": "4",
+    "return_leg": "false",
+    "top_n": "20"
+  },
+  {
+    "name": "Hawaii - Wed to Mon (5 nights)",
+    "origin": "PHX",
+    "destination": "HNL",
+    "compare_destination": "",
+    "from_date": "2027-01-01",
+    "to_date": "2027-04-30",
+    "cabin_class": "ECONOMY",
+    "max_stops": "ANY",
+    "days": "wednesday",
+    "departure_window": "",
+    "trip_duration": "5",
+    "return_leg": "false",
+    "top_n": "20"
   }
 ]
