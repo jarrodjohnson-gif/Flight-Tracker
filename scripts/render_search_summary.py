@@ -305,6 +305,28 @@ def render_roundtrip(one_way_floor: float, currency: str) -> list[str]:
         f"departing {when}, across {len(dates)} priced pairs."
     )
     lines.append("")
+
+    try:
+        top_n = int(os.environ.get("TOP_N", "15"))
+    except ValueError:
+        top_n = 15
+    ranked = sorted(dates, key=lambda d: d["price"])[:top_n]
+    floor = ranked[0]["price"]
+
+    lines.append(f"### {len(ranked)} cheapest trips, best first")
+    lines.append("")
+    lines.append("| # | Out | Back | Total | Over cheapest |")
+    lines.append("| --- | --- | --- | --- | --- |")
+    for rank, entry in enumerate(ranked, start=1):
+        ret = entry.get("return_date")
+        extra = entry["price"] - floor
+        over = "—" if extra == 0 else f"+{format_money(extra, currency)}"
+        lines.append(
+            f"| {rank} | {format_date(entry['departure_date'])} "
+            f"| {format_date(ret) if ret else '—'} "
+            f"| {format_money(entry['price'], currency)} | {over} |"
+        )
+    lines.append("")
     return lines
 
 
