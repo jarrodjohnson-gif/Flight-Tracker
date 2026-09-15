@@ -448,8 +448,10 @@ def main() -> None:
     except ValueError:
         top_n = 15
 
+    name = os.environ.get("SEARCH_NAME", "").strip()
+    heading = f"{name} — {origin} to {destination}" if name else f"{origin} to {destination}"
     lines = [
-        f"# {origin} to {destination}",
+        f"# {heading}",
         "",
         f"Departures between **{format_date(from_date)}** and **{format_date(to_date)}** "
         f"— {cabin.replace('_', ' ').title()}, stops: {stops}.",

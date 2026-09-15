@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Jacksonville long weekend",
+    "origin": "PHX",
+    "destination": "JAX",
+    "compare_destination": "",
+    "from_date": "2026-11-05",
+    "to_date": "2027-01-31",
+    "cabin_class": "ECONOMY",
+    "max_stops": "ANY",
+    "days": "thursday,friday,saturday,sunday,monday",
+    "departure_window": "",
+    "trip_duration": "3",
+    "return_leg": "true",
+    "top_n": "10"
+  },
+  {
+    "name": "Hawaii - Honolulu vs Maui",
+    "origin": "PHX",
+    "destination": "HNL",
+    "compare_destination": "OGG",
+    "from_date": "2027-01-01",
+    "to_date": "2027-04-30",
+    "cabin_class": "ECONOMY",
+    "max_stops": "ANY",
+    "days": "",
+    "departure_window": "",
+    "trip_duration": "7",
+    "return_leg": "true",
+    "top_n": "10"
+  }
+]

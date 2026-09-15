@@ -80,29 +80,99 @@ on:
     paths:
       - ".github/workflows/flight-search.yml"
       - "scripts/render_search_summary.py"
+      - ".github/flight-searches.json"
 
 permissions:
   contents: read
 
 jobs:
-  search:
+  plan:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.build.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build the search matrix
+        id: build
+        env:
+          DISPATCH: ${{ toJSON(github.event.inputs) }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+
+          FIELDS = {
+              "origin": "PHX",
+              "destination": "JAX",
+              "compare_destination": "",
+              "from_date": "2026-11-05",
+              "to_date": "2027-01-31",
+              "cabin_class": "ECONOMY",
+              "max_stops": "ANY",
+              "days": "thursday,friday,saturday,sunday,monday",
+              "departure_window": "",
+              "trip_duration": "7",
+              "return_leg": "true",
+              "top_n": "15",
+          }
+
+          raw = os.environ.get("DISPATCH") or "null"
+          try:
+              dispatch = json.loads(raw)
+          except json.JSONDecodeError:
+              dispatch = None
+
+          if dispatch and any(str(v).strip() for v in dispatch.values()):
+              entry = {k: str(dispatch.get(k) or d) for k, d in FIELDS.items()}
+              entry["name"] = f"{entry['origin']} to {entry['destination']}"
+              searches = [entry]
+          else:
+              with open(".github/flight-searches.json") as fh:
+                  configured = json.load(fh)
+              searches = []
+              for i, item in enumerate(configured):
+                  entry = {k: str(item.get(k, d)) for k, d in FIELDS.items()}
+                  entry["name"] = str(
+                      item.get("name") or f"{entry['origin']} to {entry['destination']}"
+                  )
+                  entry["slug"] = "".join(
+                      c if c.isalnum() else "-" for c in entry["name"].lower()
+                  ).strip("-") or f"search-{i}"
+                  searches.append(entry)
+
+          for entry in searches:
+              entry.setdefault(
+                  "slug",
+                  "".join(c if c.isalnum() else "-" for c in entry["name"].lower()).strip("-"),
+              )
+          print("matrix=" + json.dumps({"search": searches}))
+          PY
+
+  search:
+    needs: plan
+    name: ${{ matrix.search.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
 
     # Inputs are passed through the environment rather than interpolated into
     # run blocks, so a crafted input value cannot reach the shell.
     env:
-      ORIGIN: ${{ github.event.inputs.origin || 'PHX' }}
-      DESTINATION: ${{ github.event.inputs.destination || 'JAX' }}
-      COMPARE_DESTINATION: ${{ github.event.inputs.compare_destination || 'MCO' }}
-      FROM_DATE: ${{ github.event.inputs.from_date || '2026-11-05' }}
-      TO_DATE: ${{ github.event.inputs.to_date || '2027-01-31' }}
-      CABIN_CLASS: ${{ github.event.inputs.cabin_class || 'ECONOMY' }}
-      MAX_STOPS: ${{ github.event.inputs.max_stops || 'ANY' }}
-      DAYS: ${{ github.event.inputs.days || 'thursday,friday,saturday,sunday,monday' }}
-      TRIP_DURATION: ${{ github.event.inputs.trip_duration || '7' }}
-      RETURN_LEG: ${{ github.event.inputs.return_leg || 'true' }}
-      DEPARTURE_WINDOW: ${{ github.event.inputs.departure_window || '' }}
-      TOP_N: ${{ github.event.inputs.top_n || '15' }}
+      ORIGIN: ${{ matrix.search.origin }}
+      DESTINATION: ${{ matrix.search.destination }}
+      COMPARE_DESTINATION: ${{ matrix.search.compare_destination }}
+      FROM_DATE: ${{ matrix.search.from_date }}
+      TO_DATE: ${{ matrix.search.to_date }}
+      CABIN_CLASS: ${{ matrix.search.cabin_class }}
+      MAX_STOPS: ${{ matrix.search.max_stops }}
+      DAYS: ${{ matrix.search.days }}
+      TRIP_DURATION: ${{ matrix.search.trip_duration }}
+      RETURN_LEG: ${{ matrix.search.return_leg }}
+      DEPARTURE_WINDOW: ${{ matrix.search.departure_window }}
+      TOP_N: ${{ matrix.search.top_n }}
+      SEARCH_NAME: ${{ matrix.search.name }}
 
     steps:
       - uses: actions/checkout@v6
@@ -349,7 +419,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: flight-search-results
+          name: flight-search-results-${{ matrix.search.slug }}
           path: |
             dates.json
             flights.json
