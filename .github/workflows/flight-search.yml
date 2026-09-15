@@ -53,6 +53,12 @@ on:
           Blank includes every day.
         required: false
         default: "thursday,friday,saturday,sunday,monday"
+      return_leg:
+        description: >-
+          Also price the return direction as its own one-way, so the two legs
+          can be bought separately. true or false.
+        required: false
+        default: "true"
       trip_duration:
         description: >-
           Nights away, to also price the trip as a round trip (e.g. 7).
@@ -94,6 +100,7 @@ jobs:
       MAX_STOPS: ${{ github.event.inputs.max_stops || 'ANY' }}
       DAYS: ${{ github.event.inputs.days || 'thursday,friday,saturday,sunday,monday' }}
       TRIP_DURATION: ${{ github.event.inputs.trip_duration || '7' }}
+      RETURN_LEG: ${{ github.event.inputs.return_leg || 'true' }}
       DEPARTURE_WINDOW: ${{ github.event.inputs.departure_window || '' }}
       TOP_N: ${{ github.event.inputs.top_n || '15' }}
 
@@ -143,6 +150,63 @@ jobs:
             --sort \
             ${{ steps.dayfilter.outputs.flags }} \
             --format json > dates.json
+
+      - name: Search return leg
+        if: env.RETURN_LEG == 'true'
+        continue-on-error: true
+        run: |
+          uv run fli dates "$DESTINATION" "$ORIGIN" \
+            --from "$FROM_DATE" \
+            --to "$TO_DATE" \
+            --class "$CABIN_CLASS" \
+            --stops "$MAX_STOPS" \
+            --sort \
+            ${{ steps.dayfilter.outputs.flags }} \
+            --format json > dates-return.json
+
+      - name: Search return leg nonstop
+        if: env.RETURN_LEG == 'true'
+        continue-on-error: true
+        run: |
+          uv run fli dates "$DESTINATION" "$ORIGIN" \
+            --from "$FROM_DATE" \
+            --to "$TO_DATE" \
+            --class "$CABIN_CLASS" \
+            --stops NON_STOP \
+            --sort \
+            ${{ steps.dayfilter.outputs.flags }} \
+            --format json > dates-return-nonstop.json
+
+      - name: Pick the cheapest return nonstop date
+        id: return_nonstop
+        if: env.RETURN_LEG == 'true'
+        continue-on-error: true
+        run: |
+          uv run python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os.path
+
+          dates = []
+          path = "dates-return-nonstop.json"
+          if os.path.exists(path) and os.path.getsize(path):
+              try:
+                  dates = (json.loads(open(path).read()).get("dates")) or []
+              except json.JSONDecodeError:
+                  dates = []
+          print(f"date={min(dates, key=lambda d: d['price'])['departure_date']}" if dates else "date=")
+          PY
+
+      - name: Search return nonstop flights
+        if: steps.return_nonstop.outputs.date != ''
+        continue-on-error: true
+        env:
+          RETURN_NONSTOP_DATE: ${{ steps.return_nonstop.outputs.date }}
+        run: |
+          uv run fli flights "$DESTINATION" "$ORIGIN" "$RETURN_NONSTOP_DATE" \
+            --class "$CABIN_CLASS" \
+            --stops NON_STOP \
+            --sort CHEAPEST \
+            --format json > flights-return-nonstop.json
 
       - name: Search round trip
         if: env.TRIP_DURATION != '' && env.TRIP_DURATION != '0'
@@ -294,4 +358,7 @@ jobs:
             dates-compare.json
             flights-compare.json
             dates-roundtrip.json
+            dates-return.json
+            dates-return-nonstop.json
+            flights-return-nonstop.json
           if-no-files-found: warn
