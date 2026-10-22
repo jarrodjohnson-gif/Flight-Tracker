@@ -415,3 +415,17 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License — see the LICENSE file for details.
+
+---
+
+## This fork: what was added on top of upstream Fli
+
+This repository is a fork of [punitarani/fli](https://github.com/punitarani/fli), extended with a fare-watching and trip-pricing layer built for tracking real trips over time:
+
+- **Price watcher with a web UI**: watch a route and get re-priced results on a schedule, with a quick-add watch form (route, date range, trip length, cabin, stops).
+- **GitHub Actions checker**: flight searches run unattended on GitHub Actions and commit updated prices back to the repo.
+- **Whole-trip pricing**: price the outbound and return directions, cost every mix of the two legs, and rank complete trips, not just single flights.
+- **Batch pricing**: price a list of trips in one run, with a result digest.
+- **Comparison views**: price a second destination alongside the primary one, compare nonstop vs connecting pricing, and break prices down by day of week with departure-time and departure-day filters and connection times.
+
+Everything upstream remains under its original license (see `LICENSE.txt`); the additions above are this fork's own work.
